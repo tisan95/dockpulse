@@ -1,0 +1,66 @@
+{% extends "accesos/base.html" %}
+
+{% block title %}Check-out{% endblock %}
+
+{% block content %}
+<div class="dp-card">
+    <div class="dp-title">Check-out de chofer</div>
+    <p class="dp-subtitle">
+        Busca el vehículo por matrícula y registra la salida.
+    </p>
+
+    {% if error %}
+        <div style="color:#f97316;margin-bottom:12px;font-size:13px;">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    <!-- Paso 1: búsqueda por matrícula -->
+    <form method="post" style="margin-bottom:16px;">
+        {% csrf_token %}
+        <div class="dp-label">Matrícula tractora</div>
+        <input type="text" name="matricula_tractora" class="dp-input" placeholder="Ej: 1234ABC">
+        <button type="submit" name="buscar" class="dp-button">Buscar vehículo</button>
+    </form>
+
+    <!-- Paso 2: si encontramos el vehículo, mostramos resumen y confirmación -->
+    {% if visit %}
+        <div style="margin-top:16px;border-top:1px solid #1f2937;padding-top:16px;">
+            <div class="dp-subtitle">
+                Vehículo encontrado:
+            </div>
+            <table>
+                <tr>
+                    <th>Chofer</th><td>{{ visit.nombre_chofer }}</td>
+                </tr>
+                <tr>
+                    <th>Matrícula</th><td>{{ visit.matricula_tractora }}</td>
+                </tr>
+                <tr>
+                    <th>Agencia</th><td>{{ visit.agencia }}</td>
+                </tr>
+                <tr>
+                    <th>Muelle</th><td>{{ visit.muelle }}</td>
+                </tr>
+                <tr>
+                    <th>Entrada</th><td>{{ visit.entrada }}</td>
+                </tr>
+                <tr>
+                    <th>Tiempo en planta</th><td>{{ visit.tiempo_en_planta }}</td>
+                </tr>
+            </table>
+
+            <form method="post" style="margin-top:16px;">
+                {% csrf_token %}
+                <input type="hidden" name="visit_id" value="{{ visit.id }}">
+                <label class="dp-label">
+                    <input type="checkbox" name="documentacion_ok">
+                    Documentación correcta
+                </label>
+                <input type="text" name="precinto" class="dp-input" placeholder="Número de precinto (si aplica)">
+                <button type="submit" name="confirmar" class="dp-button">Registrar salida</button>
+            </form>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

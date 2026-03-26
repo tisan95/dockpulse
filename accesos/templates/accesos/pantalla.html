@@ -1,0 +1,55 @@
+{% extends "accesos/base.html" %}
+
+{% block head_extra %}
+<!-- Auto-refresh cada 30 segundos para la pantalla de almacén -->
+<meta http-equiv="refresh" content="30">
+{% endblock %}
+
+{% block title %}Pantalla almacén{% endblock %}
+
+{% block content %}
+<div class="dp-card">
+    <div class="dp-title">
+        Vehículos en planta ahora
+        <span class="dp-badge dp-badge-green" style="margin-left:8px;">
+            Tiempo real
+        </span>
+    </div>
+    <p class="dp-subtitle">
+        Hora actual: {{ ahora }}
+    </p>
+
+    {% if visitas %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Cita de carga</th>
+                    <th>Muelle</th>
+                    <th>Agencia</th>
+                    <th>Matrícula</th>
+                    <th>Chofer</th>
+                    <th>Entrada</th>
+                    <th>Tiempo en planta</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in visitas %}
+                    <tr>
+                        <td>{{ v.cita_carga }}</td>
+                        <td>{{ v.muelle }}</td>
+                        <td>{{ v.agencia }}</td>
+                        <td>{{ v.matricula_tractora }}</td>
+                        <td>{{ v.nombre_chofer }}</td>
+                        <td>{{ v.entrada }}</td>
+                        <td>{{ v.tiempo_en_planta }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="dp-subtitle">
+            No hay vehículos en planta ahora mismo.
+        </p>
+    {% endif %}
+</div>
+{% endblock %}

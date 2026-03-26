@@ -1,0 +1,29 @@
+{% extends "accesos/base.html" %}
+
+{% block title %}Check-in{% endblock %}
+
+{% block content %}
+<div class="dp-card">
+    <div class="dp-title">Check-in de chofer</div>
+    <p class="dp-subtitle">
+        Control de accesos · Registra los datos cuando el camión llega a planta.
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+            <div>
+                <div class="dp-label">{{ field.label }}</div>
+                {{ field }}
+                {% if field.errors %}
+                    <div style="color:#f87171;font-size:12px;">
+                        {{ field.errors|striptags }}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="dp-button">Registrar entrada</button>
+    </form>
+</div>
+{% endblock %}

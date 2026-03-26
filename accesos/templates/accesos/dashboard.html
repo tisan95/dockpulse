@@ -1,0 +1,49 @@
+{% extends "accesos/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dp-card">
+    <div class="dp-title">Dashboard de operaciones</div>
+    <p class="dp-subtitle">
+        Visión rápida de la carga de muelles y la calidad de la documentación.
+    </p>
+
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+        <div style="flex:1;min-width:160px;">
+            <div class="dp-label">Vehículos en planta ahora</div>
+            <div style="font-size:24px;font-weight:600;">{{ en_planta }}</div>
+        </div>
+        <div style="flex:1;min-width:160px;">
+            <div class="dp-label">Total de visitas registradas</div>
+            <div style="font-size:24px;font-weight:600;">{{ total_visitas }}</div>
+        </div>
+        <div style="flex:1;min-width:160px;">
+            <div class="dp-label">Incidencias de documentación</div>
+            <div style="font-size:24px;font-weight:600;color:#f87171;">{{ incidencias }}</div>
+        </div>
+    </div>
+
+    <h3 class="dp-subtitle" style="margin-top:8px;">Top agencias por volumen de visitas</h3>
+    {% if agencias %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Agencia</th>
+                    <th>Visitas</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in agencias %}
+                    <tr>
+                        <td>{{ a.agencia }}</td>
+                        <td>{{ a.total }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="dp-subtitle">Todavía no hay suficiente histórico para mostrar agencias.</p>
+    {% endif %}
+</div>
+{% endblock %}
