@@ -1,55 +1,148 @@
 {% extends "accesos/base.html" %}
-
-{% block head_extra %}
-<!-- Auto-refresh cada 30 segundos para la pantalla de almacén -->
-<meta http-equiv="refresh" content="30">
-{% endblock %}
-
+{% block head_extra %}<meta http-equiv="refresh" content="30">{% endblock %}
 {% block title %}Pantalla almacén{% endblock %}
 
 {% block content %}
-<div class="dp-card">
-    <div class="dp-title">
-        Vehículos en planta ahora
-        <span class="dp-badge dp-badge-green" style="margin-left:8px;">
-            Tiempo real
-        </span>
-    </div>
-    <p class="dp-subtitle">
-        Hora actual: {{ ahora }}
-    </p>
 
-    {% if visitas %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Cita de carga</th>
-                    <th>Muelle</th>
-                    <th>Agencia</th>
-                    <th>Matrícula</th>
-                    <th>Chofer</th>
-                    <th>Entrada</th>
-                    <th>Tiempo en planta</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for v in visitas %}
-                    <tr>
-                        <td>{{ v.cita_carga }}</td>
-                        <td>{{ v.muelle }}</td>
-                        <td>{{ v.agencia }}</td>
-                        <td>{{ v.matricula_tractora }}</td>
-                        <td>{{ v.nombre_chofer }}</td>
-                        <td>{{ v.entrada }}</td>
-                        <td>{{ v.tiempo_en_planta }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p class="dp-subtitle">
-            No hay vehículos en planta ahora mismo.
+<!-- Cabecera de estado -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <div>
+        <h1 style="font-size:22px;font-weight:700;color:var(--text);">Estado de planta</h1>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:2px;">
+            {{ ahora|date:"l d/m/Y" }} &nbsp;·&nbsp;
+            <span style="color:var(--accent);font-family:monospace;">{{ ahora|date:"H:i:s" }}</span>
+            &nbsp;·&nbsp; refresco cada 30s
         </p>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;
+              color:var(--green);background:rgba(74,222,128,0.1);
+              border:1px solid rgba(74,222,128,0.2);padding:5px 12px;border-radius:999px;">
+            <span style="width:7px;height:7px;border-radius:50%;background:var(--green);
+                  box-shadow:0 0 6px var(--green);animation:pulse 2s infinite;display:inline-block;"></span>
+            EN VIVO
+        </span>
+        <a href="{% url 'checkin' %}" class="dp-btn dp-btn-primary dp-btn-sm">+ Check-in</a>
+    </div>
+</div>
+
+<!-- Grid de muelles -->
+<div class="dp-card" style="padding:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <span class="dp-card-title" style="margin-bottom:0;">Muelles</span>
+        <div style="display:flex;gap:16px;font-size:11px;color:var(--text-muted);">
+            <span><span style="color:var(--green);">●</span> Libre</span>
+            <span><span style="color:var(--yellow);">●</span> Operando</span>
+            <span><span style="color:var(--red);">●</span> Ocupado / en espera</span>
+        </div>
+    </div>
+    {% if muelles %}
+    <div class="muelle-grid">
+        {% for m in muelles %}
+        {% with v=m.visita_activa %}
+        <div class="muelle-card {% if not v %}libre{% elif v.estado == 'OPERANDO' %}operando{% else %}ocupado{% endif %}">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div>
+                    <div class="muelle-num">M{{ m.numero }}</div>
+                    <div class="muelle-tipo">{{ m.get_tipo_display }}</div>
+                </div>
+                {% if v %}
+                <span class="dp-badge {% if v.tipo == 'ENTRADA' %}badge-azul{% else %}badge-morado{% endif %}">
+                    {% if v.tipo == 'ENTRADA' %}📦{% else %}🚚{% endif %}
+                </span>
+                {% endif %}
+            </div>
+            <div class="muelle-body">
+                {% if v %}
+                    <div class="muelle-agencia">{{ v.agencia }}</div>
+                    <div class="muelle-mat">{{ v.matricula_tractora }}</div>
+                    <div style="margin-top:6px;">
+                        <span class="dp-badge badge-{{ v.alerta_tiempo }}">{{ v.tiempo_en_planta }}</span>
+                        <span class="dp-badge badge-gris" style="margin-left:4px;">{{ v.get_estado_display }}</span>
+                    </div>
+                    <div class="muelle-actions">
+                        <form method="post" action="{% url 'cambiar_estado' v.id %}">
+                            {% csrf_token %}
+                            {% if v.estado == 'ESPERANDO' %}
+                            <button name="estado" value="OPERANDO" class="dp-btn dp-btn-xs dp-btn-ghost">▶ Iniciar</button>
+                            {% elif v.estado == 'OPERANDO' %}
+                            <button name="estado" value="LISTO" class="dp-btn dp-btn-xs dp-btn-ghost">✓ Listo</button>
+                            {% endif %}
+                        </form>
+                        <a href="{% url 'incidencia_crear' v.id %}" class="dp-btn dp-btn-xs dp-btn-ghost" style="text-decoration:none;">⚠</a>
+                    </div>
+                {% else %}
+                    <div class="muelle-libre-txt">Libre</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
     {% endif %}
 </div>
+
+<!-- Tabla de vehículos -->
+<div class="dp-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="dp-card-title" style="margin-bottom:0;">
+            Vehículos en planta
+            <span class="dp-badge badge-azul" style="margin-left:8px;font-size:12px;">{{ visitas|length }}</span>
+        </div>
+        <a href="{% url 'checkout' %}" class="dp-btn dp-btn-ghost dp-btn-sm" style="text-decoration:none;">Check-out →</a>
+    </div>
+
+    {% if visitas %}
+    <table>
+        <thead>
+            <tr>
+                <th>Tipo</th><th>Muelle</th><th>Agencia</th><th>Matrícula</th>
+                <th>Chofer</th><th>Referencia</th><th>Entrada</th>
+                <th>Tiempo</th><th>Estado</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in visitas %}
+            <tr class="row-{{ v.alerta_tiempo }}">
+                <td>
+                    <span class="dp-badge {% if v.tipo == 'ENTRADA' %}badge-azul{% else %}badge-morado{% endif %}">
+                        {% if v.tipo == 'ENTRADA' %}📦 Recepción{% else %}🚚 Expedición{% endif %}
+                    </span>
+                </td>
+                <td style="font-weight:600;">{% if v.muelle %}M{{ v.muelle.numero }}{% else %}—{% endif %}</td>
+                <td>{{ v.agencia }}</td>
+                <td style="font-family:monospace;font-size:12px;">{{ v.matricula_tractora }}</td>
+                <td>{{ v.nombre_chofer }}</td>
+                <td style="font-size:12px;color:var(--text-muted);">
+                    {% if v.tipo == 'ENTRADA' %}
+                        {{ v.numero_contenedor|default:"—" }}
+                        {% if v.orden_compra %}<br><span style="font-size:10px;">OC: {{ v.orden_compra }}</span>{% endif %}
+                    {% else %}
+                        {{ v.get_tipo_salida_display|default:"—" }}
+                        {% if v.cliente %}<br><span style="font-size:10px;">{{ v.cliente }}</span>{% endif %}
+                    {% endif %}
+                </td>
+                <td style="font-size:12px;color:var(--text-dim);">{{ v.entrada|date:"H:i" }}</td>
+                <td><span class="dp-badge badge-{{ v.alerta_tiempo }}">{{ v.tiempo_en_planta }}</span></td>
+                <td>
+                    <span class="dp-badge badge-gris">{{ v.get_estado_display }}</span>
+                    {% for inc in v.incidencias.all %}{% if not inc.resuelta %}
+                    <span class="dp-badge {% if inc.urgente %}badge-rojo{% else %}badge-amarillo{% endif %}" style="margin-left:3px;">⚠</span>
+                    {% endif %}{% endfor %}
+                </td>
+                <td>
+                    <a href="{% url 'incidencia_crear' v.id %}" class="dp-btn dp-btn-ghost dp-btn-xs" style="text-decoration:none;">+ Inc.</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align:center;padding:40px 0;color:var(--text-muted);">
+        <div style="font-size:36px;margin-bottom:8px;">🚛</div>
+        No hay vehículos en planta ahora mismo.
+    </div>
+    {% endif %}
+</div>
+
 {% endblock %}

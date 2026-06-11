@@ -1,0 +1,50 @@
+{% extends "accesos/base.html" %}
+{% block title %}Nueva incidencia{% endblock %}
+
+{% block content %}
+<div style="max-width:520px;">
+    <!-- Breadcrumb -->
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);margin-bottom:20px;">
+        <a href="{% url 'pantalla' %}" style="color:var(--text-muted);text-decoration:none;">Pantalla</a>
+        <span>›</span>
+        <span>Incidencia</span>
+    </div>
+
+    <div class="dp-card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+            <span style="font-size:22px;">⚠️</span>
+            <div class="dp-card-title" style="margin-bottom:0;">Registrar incidencia</div>
+        </div>
+        <p class="dp-card-sub">
+            Vehículo: <strong style="color:var(--text);font-family:monospace;">{{ visit.matricula_tractora }}</strong>
+            &nbsp;·&nbsp; {{ visit.agencia }}
+            {% if visit.muelle %}&nbsp;·&nbsp; Muelle {{ visit.muelle.numero }}{% endif %}
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="dp-field">
+                <label class="dp-label">{{ field.label }}</label>
+                {% if field.field.widget.input_type == 'checkbox' %}
+                <label class="dp-check">
+                    {{ field }}
+                    Marcar como urgente
+                </label>
+                {% else %}
+                {{ field }}
+                {% endif %}
+                {% if field.errors %}
+                <span style="color:var(--red);font-size:11px;margin-top:2px;display:block;">{{ field.errors.0 }}</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div style="display:flex;gap:10px;margin-top:8px;">
+                <button type="submit" class="dp-btn dp-btn-danger">Guardar incidencia</button>
+                <a href="{% url 'pantalla' %}" class="dp-btn dp-btn-ghost" style="text-decoration:none;">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

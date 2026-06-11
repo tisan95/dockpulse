@@ -2,136 +2,219 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>DockPulse - {% block title %}{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DockPulse — {% block title %}{% endblock %}</title>
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:        #060b18;
+            --surface:   #0d1526;
+            --surface2:  #111d35;
+            --border:    rgba(148,163,184,0.1);
+            --border2:   rgba(148,163,184,0.18);
+            --text:      #e2e8f0;
+            --text-muted:#64748b;
+            --text-dim:  #94a3b8;
+            --accent:    #38bdf8;
+            --accent2:   #818cf8;
+            --green:     #4ade80;
+            --yellow:    #facc15;
+            --red:       #f87171;
+        }
+
         body {
-            margin: 0;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background-color: #050816;
-            color: #e5e7eb;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
         }
-        .dp-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 24px;
+
+        /* Accent line at very top */
+        body::before {
+            content: '';
+            display: block;
+            height: 3px;
+            background: linear-gradient(90deg, #0ea5e9, #6366f1, #8b5cf6);
         }
+
+        /* ── LAYOUT ── */
+        .dp-container { max-width: 1320px; margin: 0 auto; padding: 20px 28px; }
+
+        /* ── HEADER ── */
         .dp-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 28px; padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
         }
         .dp-logo {
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            font-size: 14px;
-            color: #38bdf8;
+            font-size: 16px; font-weight: 800; letter-spacing: 0.1em;
+            color: var(--accent); text-decoration: none;
+            display: flex; align-items: center; gap: 8px;
         }
+        .dp-logo-dot { width: 8px; height: 8px; border-radius: 50%;
+            background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+        .dp-logo span { color: var(--text-muted); font-weight: 400; }
+        .dp-nav { display: flex; align-items: center; gap: 2px; }
         .dp-nav a {
-            color: #9ca3af;
-            margin-left: 16px;
-            text-decoration: none;
-            font-size: 14px;
+            color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500;
+            padding: 6px 14px; border-radius: 8px;
+            transition: background 0.15s, color 0.15s;
+            white-space: nowrap;
         }
-        .dp-nav a:hover {
-            color: #e5e7eb;
+        .dp-nav a:hover { color: var(--text); background: rgba(148,163,184,0.07); }
+        .dp-nav a.active {
+            color: var(--accent); background: rgba(56,189,248,0.1);
+            border: 1px solid rgba(56,189,248,0.2);
         }
+
+        /* ── CARDS ── */
         .dp-card {
-            background: rgba(15,23,42,0.9);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid rgba(148,163,184,0.25);
-            box-shadow: 0 18px 40px rgba(15,23,42,0.7);
+            background: var(--surface); border-radius: 14px; padding: 24px;
+            border: 1px solid var(--border); margin-bottom: 20px;
         }
-        .dp-title {
-            font-size: 20px;
-            margin-bottom: 12px;
-            color: #e5e7eb;
+        .dp-card-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+        .dp-card-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+
+        /* ── SECTION DIVIDER ── */
+        .dp-section {
+            font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em;
+            color: var(--text-muted); margin: 20px 0 12px;
+            display: flex; align-items: center; gap: 10px;
         }
+        .dp-section::after { content:''; flex:1; height:1px; background: var(--border); }
+
+        /* ── FORMS ── */
+        .dp-label { font-size: 12px; color: var(--text-dim); margin-bottom: 5px; display: block; }
+        .dp-field { margin-bottom: 16px; }
         .dp-input {
-            width: 100%;
-            padding: 8px 10px;
-            border-radius: 6px;
-            border: 1px solid #4b5563;
-            background-color: #020617;
-            color: #e5e7eb;
-            margin-bottom: 12px;
+            width: 100%; padding: 9px 13px; border-radius: 8px;
+            border: 1px solid rgba(100,116,139,0.35); background: var(--bg);
+            color: var(--text); font-size: 14px;
+            transition: border-color 0.15s, box-shadow 0.15s;
         }
-        .dp-label {
-            font-size: 13px;
-            color: #9ca3af;
+        .dp-input:focus {
+            outline: none; border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(56,189,248,0.12);
         }
-        .dp-button {
-            background: linear-gradient(to right, #06b6d4, #3b82f6);
-            color: white;
-            border: none;
-            border-radius: 999px;
-            padding: 8px 18px;
-            font-size: 14px;
-            cursor: pointer;
+        select.dp-input { cursor: pointer; }
+        textarea.dp-input { resize: vertical; }
+        .dp-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+        .dp-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 18px; }
+
+        /* ── BUTTONS ── */
+        .dp-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            border: none; border-radius: 8px; padding: 9px 20px;
+            font-size: 14px; font-weight: 500; cursor: pointer;
+            text-decoration: none; transition: opacity 0.15s, transform 0.1s;
         }
-        .dp-button.secondary {
-            background: transparent;
-            border: 1px solid #4b5563;
-            color: #e5e7eb;
-            margin-left: 8px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-        th, td {
-            padding: 8px 10px;
-            border-bottom: 1px solid #1f2937;
-        }
-        th {
-            text-align: left;
-            font-size: 12px;
-            text-transform: uppercase;
-            color: #9ca3af;
-            letter-spacing: 0.08em;
-        }
-        tr:nth-child(even) td {
-            background-color: rgba(15,23,42,0.7);
-        }
+        .dp-btn:hover { opacity: 0.88; }
+        .dp-btn:active { transform: scale(0.97); }
+        .dp-btn-primary { background: linear-gradient(135deg,#0ea5e9,#6366f1); color: #fff; }
+        .dp-btn-purple  { background: linear-gradient(135deg,#8b5cf6,#6366f1); color: #fff; }
+        .dp-btn-ghost   { background: transparent; border: 1px solid var(--border2); color: var(--text-dim); }
+        .dp-btn-ghost:hover { color: var(--text); border-color: var(--text-muted); }
+        .dp-btn-danger  { background: linear-gradient(135deg,#ef4444,#dc2626); color: #fff; }
+        .dp-btn-sm      { padding: 5px 12px; font-size: 12px; border-radius: 6px; }
+        .dp-btn-xs      { padding: 3px 9px; font-size: 11px; border-radius: 5px; }
+
+        /* ── BADGES ── */
         .dp-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 999px;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 8px; border-radius: 999px;
+            font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
         }
-        .dp-badge-green {
-            background: rgba(22,163,74,0.15);
-            color: #4ade80;
+        .badge-verde    { background: rgba(74,222,128,0.12); color: var(--green);  border: 1px solid rgba(74,222,128,0.2); }
+        .badge-amarillo { background: rgba(250,204,21,0.12); color: var(--yellow); border: 1px solid rgba(250,204,21,0.2); }
+        .badge-rojo     { background: rgba(248,113,113,0.12);color: var(--red);    border: 1px solid rgba(248,113,113,0.2); }
+        .badge-azul     { background: rgba(56,189,248,0.12); color: var(--accent); border: 1px solid rgba(56,189,248,0.2); }
+        .badge-morado   { background: rgba(129,140,248,0.12);color: var(--accent2);border: 1px solid rgba(129,140,248,0.2); }
+        .badge-gris     { background: rgba(100,116,139,0.12);color: var(--text-dim);border: 1px solid rgba(100,116,139,0.2); }
+
+        /* ── TABLE ── */
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        thead th {
+            padding: 8px 12px; font-size: 10px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--text-muted); border-bottom: 1px solid var(--border2); text-align: left;
         }
-        .dp-badge-red {
-            background: rgba(220,38,38,0.15);
-            color: #f87171;
+        tbody td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover td { background: rgba(56,189,248,0.03); }
+        /* Alerta de tiempo en filas */
+        tbody tr.row-rojo     td { border-left: 3px solid rgba(248,113,113,0.6); }
+        tbody tr.row-amarillo td { border-left: 3px solid rgba(250,204,21,0.4); }
+
+        /* ── MUELLE GRID (pantalla TV) ── */
+        .muelle-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
         }
-        .dp-subtitle {
-            font-size: 13px;
-            color: #9ca3af;
-            margin-bottom: 16px;
+        .muelle-card {
+            border-radius: 12px; padding: 18px 20px;
+            border: 1px solid var(--border); position: relative; overflow: hidden;
+            transition: transform 0.15s;
         }
+        .muelle-card:hover { transform: translateY(-1px); }
+        .muelle-card.libre    { background: rgba(74,222,128,0.05);  border-color: rgba(74,222,128,0.15); }
+        .muelle-card.ocupado  { background: rgba(248,113,113,0.06); border-color: rgba(248,113,113,0.2); }
+        .muelle-card.operando { background: rgba(250,204,21,0.06);  border-color: rgba(250,204,21,0.2); }
+        /* pulse ring on occupied */
+        .muelle-card.ocupado::before, .muelle-card.operando::before {
+            content: ''; position: absolute; top: 12px; right: 12px;
+            width: 8px; height: 8px; border-radius: 50%;
+        }
+        .muelle-card.ocupado::before  { background: var(--red);    box-shadow: 0 0 6px var(--red); animation: pulse 2s infinite; }
+        .muelle-card.operando::before { background: var(--yellow);  box-shadow: 0 0 6px var(--yellow); animation: pulse 1.5s infinite; }
+        @keyframes pulse {
+            0%,100% { opacity: 1; transform: scale(1); }
+            50%      { opacity: 0.5; transform: scale(1.4); }
+        }
+        .muelle-num  { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1; }
+        .muelle-tipo { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-top: 2px; }
+        .muelle-body { margin-top: 10px; }
+        .muelle-libre-txt { font-size: 12px; color: var(--green); font-weight: 500; }
+        .muelle-agencia  { font-size: 13px; font-weight: 600; color: var(--text); }
+        .muelle-mat      { font-size: 11px; color: var(--text-muted); font-family: monospace; margin-top: 2px; }
+        .muelle-actions  { margin-top: 10px; display: flex; gap: 6px; }
+
+        /* ── STAT CARDS ── */
+        .dp-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .dp-stat {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 18px 20px;
+        }
+        .dp-stat-icon { font-size: 20px; margin-bottom: 8px; }
+        .dp-stat-val  { font-size: 32px; font-weight: 800; color: var(--text); line-height: 1; }
+        .dp-stat-lbl  { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+        /* ── ALERT ── */
+        .dp-alert { padding: 12px 16px; border-radius: 9px; font-size: 13px; margin-bottom: 16px; }
+        .dp-alert-error { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.25); color: #fca5a5; }
+        .dp-alert-info  { background: rgba(56,189,248,0.08);  border: 1px solid rgba(56,189,248,0.2);  color: #7dd3fc; }
+
+        /* ── CHECKBOX ── */
+        .dp-check { display: flex; align-items: center; gap: 9px; font-size: 14px; color: var(--text); cursor: pointer; }
+        .dp-check input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
     </style>
     {% block head_extra %}{% endblock %}
 </head>
 <body>
 <div class="dp-container">
     <header class="dp-header">
-        <div class="dp-logo">DOCKPULSE</div>
+        <a href="{% url 'home' %}" class="dp-logo">
+            <div class="dp-logo-dot"></div>
+            DOCK<span>PULSE</span>
+        </a>
         <nav class="dp-nav">
-            <a href="{% url 'checkin' %}">Check-in</a>
-            <a href="{% url 'checkout' %}">Check-out</a>
-            <a href="{% url 'pantalla' %}">Pantalla</a>
-            <a href="{% url 'dashboard' %}">Dashboard</a>
+            <a href="{% url 'checkin' %}"   {% if request.resolver_match.url_name == 'checkin'   %}class="active"{% endif %}>Check-in</a>
+            <a href="{% url 'checkout' %}"  {% if request.resolver_match.url_name == 'checkout'  %}class="active"{% endif %}>Check-out</a>
+            <a href="{% url 'pantalla' %}"  {% if request.resolver_match.url_name == 'pantalla' or request.resolver_match.url_name == 'home' %}class="active"{% endif %}>Pantalla</a>
+            <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>Dashboard</a>
         </nav>
     </header>
-
     {% block content %}{% endblock %}
 </div>
 </body>

@@ -1,49 +1,118 @@
 {% extends "accesos/base.html" %}
-
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="dp-card">
-    <div class="dp-title">Dashboard de operaciones</div>
-    <p class="dp-subtitle">
-        Visión rápida de la carga de muelles y la calidad de la documentación.
-    </p>
 
-    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
-        <div style="flex:1;min-width:160px;">
-            <div class="dp-label">Vehículos en planta ahora</div>
-            <div style="font-size:24px;font-weight:600;">{{ en_planta }}</div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <div>
+        <h1 style="font-size:22px;font-weight:700;">Dashboard de operaciones</h1>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:2px;">Métricas del día y estado general de la plataforma.</p>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="dp-stats">
+    <div class="dp-stat">
+        <div class="dp-stat-icon">🏭</div>
+        <div class="dp-stat-val">{{ en_planta }}</div>
+        <div class="dp-stat-lbl">Vehículos en planta</div>
+    </div>
+    <div class="dp-stat">
+        <div class="dp-stat-icon">📦</div>
+        <div class="dp-stat-val">{{ entradas_hoy }}</div>
+        <div class="dp-stat-lbl">Recepciones hoy</div>
+    </div>
+    <div class="dp-stat">
+        <div class="dp-stat-icon">🚚</div>
+        <div class="dp-stat-val">{{ salidas_hoy }}</div>
+        <div class="dp-stat-lbl">Expediciones hoy</div>
+    </div>
+    <div class="dp-stat" style="{% if incidencias_urgentes > 0 %}border-color:rgba(248,113,113,0.3);{% endif %}">
+        <div class="dp-stat-icon">⚠️</div>
+        <div class="dp-stat-val" style="{% if incidencias_urgentes > 0 %}color:var(--red);{% endif %}">
+            {{ incidencias_total }}
         </div>
-        <div style="flex:1;min-width:160px;">
-            <div class="dp-label">Total de visitas registradas</div>
-            <div style="font-size:24px;font-weight:600;">{{ total_visitas }}</div>
-        </div>
-        <div style="flex:1;min-width:160px;">
-            <div class="dp-label">Incidencias de documentación</div>
-            <div style="font-size:24px;font-weight:600;color:#f87171;">{{ incidencias }}</div>
+        <div class="dp-stat-lbl">
+            Incidencias abiertas
+            {% if incidencias_urgentes > 0 %}
+            <span class="dp-badge badge-rojo" style="margin-left:4px;vertical-align:middle;">{{ incidencias_urgentes }} urgentes</span>
+            {% endif %}
         </div>
     </div>
+    <div class="dp-stat">
+        <div class="dp-stat-icon">📄</div>
+        <div class="dp-stat-val" style="{% if doc_ko > 0 %}color:var(--yellow);{% endif %}">{{ doc_ko }}</div>
+        <div class="dp-stat-lbl">Docs incorrectos</div>
+    </div>
+    <div class="dp-stat">
+        <div class="dp-stat-icon">📊</div>
+        <div class="dp-stat-val">{{ total_visitas }}</div>
+        <div class="dp-stat-lbl">Total histórico</div>
+    </div>
+</div>
 
-    <h3 class="dp-subtitle" style="margin-top:8px;">Top agencias por volumen de visitas</h3>
-    {% if agencias %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+    <!-- Vehículos activos -->
+    <div class="dp-card" style="margin-bottom:0;">
+        <div class="dp-card-title">Vehículos en planta ahora</div>
+        {% if visitas_activas %}
         <table>
             <thead>
-                <tr>
-                    <th>Agencia</th>
-                    <th>Visitas</th>
-                </tr>
+                <tr><th>Tipo</th><th>Agencia</th><th>Muelle</th><th>Tiempo</th><th>Estado</th></tr>
             </thead>
             <tbody>
-                {% for a in agencias %}
-                    <tr>
-                        <td>{{ a.agencia }}</td>
-                        <td>{{ a.total }}</td>
-                    </tr>
+                {% for v in visitas_activas %}
+                <tr class="row-{{ v.alerta_tiempo }}">
+                    <td>
+                        <span class="dp-badge {% if v.tipo == 'ENTRADA' %}badge-azul{% else %}badge-morado{% endif %}">
+                            {{ v.get_tipo_display }}
+                        </span>
+                    </td>
+                    <td>{{ v.agencia }}</td>
+                    <td style="font-weight:600;">{% if v.muelle %}M{{ v.muelle.numero }}{% else %}—{% endif %}</td>
+                    <td><span class="dp-badge badge-{{ v.alerta_tiempo }}">{{ v.tiempo_en_planta }}</span></td>
+                    <td><span class="dp-badge badge-gris">{{ v.get_estado_display }}</span></td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
-    {% else %}
-        <p class="dp-subtitle">Todavía no hay suficiente histórico para mostrar agencias.</p>
-    {% endif %}
+        {% else %}
+        <div style="text-align:center;padding:30px 0;color:var(--text-muted);font-size:13px;">
+            <div style="font-size:28px;margin-bottom:6px;">🚛</div>
+            No hay vehículos en planta
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Top agencias -->
+    <div class="dp-card" style="margin-bottom:0;">
+        <div class="dp-card-title">Top agencias por volumen</div>
+        {% if agencias %}
+        <table>
+            <thead><tr><th>Agencia</th><th>Visitas</th><th></th></tr></thead>
+            <tbody>
+                {% for a in agencias %}
+                <tr>
+                    <td>{{ a.agencia }}</td>
+                    <td style="font-weight:600;">{{ a.total }}</td>
+                    <td style="width:120px;">
+                        <div style="height:6px;border-radius:3px;
+                             background:linear-gradient(90deg,#0ea5e9,#6366f1);
+                             width:{{ a.total }}0px;max-width:110px;min-width:6px;">
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="text-align:center;padding:30px 0;color:var(--text-muted);font-size:13px;">
+            <div style="font-size:28px;margin-bottom:6px;">📈</div>
+            Sin datos históricos aún
+        </div>
+        {% endif %}
+    </div>
 </div>
+
 {% endblock %}

@@ -1,66 +1,125 @@
 {% extends "accesos/base.html" %}
-
 {% block title %}Check-out{% endblock %}
 
 {% block content %}
-<div class="dp-card">
-    <div class="dp-title">Check-out de chofer</div>
-    <p class="dp-subtitle">
-        Busca el vehículo por matrícula y registra la salida.
-    </p>
+<div style="max-width:640px;">
+    <h1 style="font-size:22px;font-weight:700;margin-bottom:4px;">Check-out</h1>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:24px;">Busca el vehículo por matrícula tractora y confirma la salida.</p>
 
     {% if error %}
-        <div style="color:#f97316;margin-bottom:12px;font-size:13px;">
-            {{ error }}
-        </div>
+    <div class="dp-alert dp-alert-error">{{ error }}</div>
     {% endif %}
 
-    <!-- Paso 1: búsqueda por matrícula -->
-    <form method="post" style="margin-bottom:16px;">
-        {% csrf_token %}
-        <div class="dp-label">Matrícula tractora</div>
-        <input type="text" name="matricula_tractora" class="dp-input" placeholder="Ej: 1234ABC">
-        <button type="submit" name="buscar" class="dp-button">Buscar vehículo</button>
-    </form>
-
-    <!-- Paso 2: si encontramos el vehículo, mostramos resumen y confirmación -->
-    {% if visit %}
-        <div style="margin-top:16px;border-top:1px solid #1f2937;padding-top:16px;">
-            <div class="dp-subtitle">
-                Vehículo encontrado:
+    <!-- Búsqueda -->
+    <div class="dp-card">
+        <form method="post">
+            {% csrf_token %}
+            <label class="dp-label">Matrícula tractora</label>
+            <div style="display:flex;gap:10px;align-items:flex-end;">
+                <div style="flex:1;">
+                    <input type="text" name="matricula_tractora" class="dp-input" style="margin-bottom:0;"
+                           placeholder="Ej: 1234ABC" value="{{ request.POST.matricula_tractora }}"
+                           autocomplete="off" autofocus>
+                </div>
+                <button type="submit" name="buscar" class="dp-btn dp-btn-primary">Buscar</button>
             </div>
-            <table>
-                <tr>
-                    <th>Chofer</th><td>{{ visit.nombre_chofer }}</td>
-                </tr>
-                <tr>
-                    <th>Matrícula</th><td>{{ visit.matricula_tractora }}</td>
-                </tr>
-                <tr>
-                    <th>Agencia</th><td>{{ visit.agencia }}</td>
-                </tr>
-                <tr>
-                    <th>Muelle</th><td>{{ visit.muelle }}</td>
-                </tr>
-                <tr>
-                    <th>Entrada</th><td>{{ visit.entrada }}</td>
-                </tr>
-                <tr>
-                    <th>Tiempo en planta</th><td>{{ visit.tiempo_en_planta }}</td>
-                </tr>
-            </table>
+        </form>
+    </div>
 
-            <form method="post" style="margin-top:16px;">
-                {% csrf_token %}
-                <input type="hidden" name="visit_id" value="{{ visit.id }}">
-                <label class="dp-label">
-                    <input type="checkbox" name="documentacion_ok">
+    {% if visit %}
+    <div class="dp-card">
+        <!-- Cabecera del vehículo encontrado -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+            <div>
+                <div style="font-size:18px;font-weight:700;color:var(--text);">{{ visit.nombre_chofer }}</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">{{ visit.agencia }}</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+                <span class="dp-badge {% if visit.tipo == 'ENTRADA' %}badge-azul{% else %}badge-morado{% endif %}">
+                    {% if visit.tipo == 'ENTRADA' %}📦 Recepción{% else %}🚚 Expedición{% endif %}
+                </span>
+                <span class="dp-badge badge-{{ visit.alerta_tiempo }}">{{ visit.tiempo_en_planta }}</span>
+                {% if visit.muelle %}<span class="dp-badge badge-gris">M{{ visit.muelle.numero }}</span>{% endif %}
+            </div>
+        </div>
+
+        <!-- Info compacta -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;
+             background:var(--bg);border-radius:10px;border:1px solid var(--border);
+             overflow:hidden;margin-bottom:20px;font-size:13px;">
+            <div style="padding:10px 14px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);">
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:2px;">DNI</div>
+                {{ visit.dni_chofer }}
+            </div>
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border);">
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:2px;">Matrícula</div>
+                <span style="font-family:monospace;">{{ visit.matricula_tractora }}</span>
+                {% if visit.matricula_remolque %} / <span style="font-family:monospace;">{{ visit.matricula_remolque }}</span>{% endif %}
+            </div>
+            <div style="padding:10px 14px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);">
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:2px;">Entrada</div>
+                {{ visit.entrada|date:"d/m/Y H:i" }}
+            </div>
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border);">
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:2px;">Estado</div>
+                <span class="dp-badge badge-gris">{{ visit.get_estado_display }}</span>
+            </div>
+            {% if visit.tipo == 'ENTRADA' %}
+            <div style="padding:10px 14px;border-right:1px solid var(--border);">
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:2px;">Contenedor</div>
+                {{ visit.numero_contenedor|default:"—" }}
+            </div>
+            <div style="padding:10px 14px;">
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:2px;">OC / Bultos</div>
+                {{ visit.orden_compra|default:"—" }} · {{ visit.bultos_declarados|default:"—" }} bultos
+            </div>
+            {% else %}
+            <div style="padding:10px 14px;border-right:1px solid var(--border);">
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:2px;">Tipo expedición</div>
+                {{ visit.get_tipo_salida_display|default:"—" }}
+            </div>
+            <div style="padding:10px 14px;">
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:2px;">Cliente</div>
+                {{ visit.cliente|default:"—" }}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Formulario de salida -->
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="visit_id" value="{{ visit.id }}">
+
+            <div class="dp-section">Datos de salida</div>
+
+            {% if visit.tipo == 'ENTRADA' %}
+            <div class="dp-field">
+                <label class="dp-label">Bultos reales descargados</label>
+                <input type="number" name="bultos_reales" class="dp-input"
+                       placeholder="0" value="{{ visit.bultos_declarados }}">
+            </div>
+            {% endif %}
+
+            <div class="dp-grid-2">
+                <div class="dp-field">
+                    <label class="dp-label">Nº de precinto (si aplica)</label>
+                    <input type="text" name="precinto" class="dp-input" placeholder="PRE-00123">
+                </div>
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <label class="dp-check">
+                    <input type="checkbox" name="documentacion_ok" checked>
                     Documentación correcta
                 </label>
-                <input type="text" name="precinto" class="dp-input" placeholder="Número de precinto (si aplica)">
-                <button type="submit" name="confirmar" class="dp-button">Registrar salida</button>
-            </form>
-        </div>
+            </div>
+
+            <div style="display:flex;gap:10px;">
+                <button type="submit" name="confirmar" class="dp-btn dp-btn-primary">Confirmar salida ›</button>
+                <a href="{% url 'incidencia_crear' visit.id %}" class="dp-btn dp-btn-ghost" style="text-decoration:none;">⚠ Registrar incidencia</a>
+            </div>
+        </form>
+    </div>
     {% endif %}
 </div>
 {% endblock %}
