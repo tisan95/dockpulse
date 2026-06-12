@@ -1,0 +1,118 @@
+{% extends 'accesos/base.html' %}
+{% block title %}{{ accion }} expedición{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <div>
+        <h1 style="font-size:22px; font-weight:700;">{{ accion }} expedición</h1>
+        {% if exp %}<p style="font-size:13px; color:var(--text-muted); margin-top:3px; font-family:monospace;">{{ exp.numero }}</p>{% endif %}
+    </div>
+    <a href="{% url 'expediciones_lista' %}" class="dp-btn dp-btn-ghost">← Volver</a>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="dp-card">
+        <div class="dp-card-title">Identificación</div>
+        <div class="dp-card-sub">Datos básicos de la expedición</div>
+
+        <div class="dp-grid-3">
+            <div class="dp-field">
+                <label class="dp-label">{{ form.numero.label }}</label>
+                {{ form.numero }}
+                {% if form.numero.errors %}<p style="color:var(--red);font-size:11px;margin-top:4px;">{{ form.numero.errors.0 }}</p>{% endif %}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ form.tipo.label }}</label>
+                {{ form.tipo }}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ form.hub_origen.label }}</label>
+                {{ form.hub_origen }}
+            </div>
+        </div>
+
+        <div class="dp-grid-2">
+            <div class="dp-field">
+                <label class="dp-label">{{ form.fecha_cita.label }}</label>
+                {{ form.fecha_cita }}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ form.hora_cita.label }}</label>
+                {{ form.hora_cita }}
+            </div>
+        </div>
+    </div>
+
+    <div class="dp-card">
+        <div class="dp-card-title">Cliente y destino</div>
+        <div class="dp-card-sub">Selecciona cliente de la BD o escribe el nombre si no existe</div>
+
+        <div class="dp-grid-2">
+            <div class="dp-field">
+                <label class="dp-label">{{ form.cliente.label }}</label>
+                {{ form.cliente }}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ form.cliente_nombre.label }}</label>
+                {{ form.cliente_nombre }}
+            </div>
+        </div>
+        <div class="dp-field">
+            <label class="dp-label">{{ form.destino.label }}</label>
+            {{ form.destino }}
+        </div>
+    </div>
+
+    <div class="dp-card">
+        <div class="dp-card-title">Agencia y muelle</div>
+        <div class="dp-card-sub">Transportista asignado y muelle de carga</div>
+
+        <div class="dp-grid-2">
+            <div class="dp-field">
+                <label class="dp-label">{{ form.agencia.label }}</label>
+                {{ form.agencia }}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ form.agencia_nombre.label }}</label>
+                {{ form.agencia_nombre }}
+            </div>
+        </div>
+        <div class="dp-grid-2">
+            <div class="dp-field">
+                <label class="dp-label">{{ form.muelle.label }}</label>
+                {{ form.muelle }}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ form.palets_previstos.label }}</label>
+                {{ form.palets_previstos }}
+            </div>
+        </div>
+    </div>
+
+    <div class="dp-card">
+        <div class="dp-card-title">Referencias</div>
+        <div class="dp-card-sub">Nº pedido SGA, albarán y observaciones</div>
+
+        <div class="dp-grid-2">
+            <div class="dp-field">
+                <label class="dp-label">{{ form.sga.label }}</label>
+                {{ form.sga }}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ form.albaran.label }}</label>
+                {{ form.albaran }}
+            </div>
+        </div>
+        <div class="dp-field">
+            <label class="dp-label">{{ form.observaciones.label }}</label>
+            {{ form.observaciones }}
+        </div>
+    </div>
+
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <a href="{% url 'expediciones_lista' %}" class="dp-btn dp-btn-ghost">Cancelar</a>
+        <button type="submit" class="dp-btn dp-btn-primary">{{ accion }} expedición</button>
+    </div>
+</form>
+{% endblock %}

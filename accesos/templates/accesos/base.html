@@ -67,6 +67,21 @@
             color: var(--accent); background: rgba(56,189,248,0.1);
             border: 1px solid rgba(56,189,248,0.2);
         }
+        /* Dropdown maestros */
+        .dp-nav .nav-group { position: relative; }
+        .dp-nav .nav-group:hover .nav-dropdown { display: block; }
+        .nav-dropdown {
+            display: none; position: absolute; top: calc(100% + 6px); left: 0;
+            background: var(--surface2); border: 1px solid var(--border2);
+            border-radius: 10px; padding: 6px; min-width: 160px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 100;
+        }
+        .nav-dropdown a {
+            display: block; padding: 7px 12px; border-radius: 7px;
+            font-size: 13px; color: var(--text-dim); text-decoration: none;
+            transition: background 0.1s, color 0.1s;
+        }
+        .nav-dropdown a:hover { background: rgba(148,163,184,0.08); color: var(--text); }
 
         /* ── CARDS ── */
         .dp-card {
@@ -209,10 +224,19 @@
             DOCK<span>PULSE</span>
         </a>
         <nav class="dp-nav">
+            <a href="{% url 'expediciones_lista' %}" {% if 'expedicion' in request.resolver_match.url_name %}class="active"{% endif %}>Expediciones</a>
             <a href="{% url 'checkin' %}"   {% if request.resolver_match.url_name == 'checkin'   %}class="active"{% endif %}>Check-in</a>
             <a href="{% url 'checkout' %}"  {% if request.resolver_match.url_name == 'checkout'  %}class="active"{% endif %}>Check-out</a>
             <a href="{% url 'pantalla' %}"  {% if request.resolver_match.url_name == 'pantalla' or request.resolver_match.url_name == 'home' %}class="active"{% endif %}>Pantalla</a>
             <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>Dashboard</a>
+            <div class="nav-group">
+                <a href="#" {% if 'clientes' in request.resolver_match.url_name or 'agencia' in request.resolver_match.url_name or 'chofer' in request.resolver_match.url_name %}class="active"{% endif %} style="cursor:default;">Maestros ▾</a>
+                <div class="nav-dropdown">
+                    <a href="{% url 'clientes_lista' %}">Clientes</a>
+                    <a href="{% url 'agencias_lista' %}">Agencias</a>
+                    <a href="{% url 'choferes_lista' %}">Choferes</a>
+                </div>
+            </div>
         </nav>
     </header>
     {% block content %}{% endblock %}

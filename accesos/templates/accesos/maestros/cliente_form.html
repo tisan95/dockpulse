@@ -1,0 +1,67 @@
+{% extends 'accesos/base.html' %}
+{% block title %}{{ accion }} cliente{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <div>
+        <h1 style="font-size:22px;font-weight:700;">{{ accion }} cliente</h1>
+        {% if obj %}<p style="font-size:13px;color:var(--text-muted);margin-top:3px;">{{ obj.nombre }} — {{ obj.sucursal }}</p>{% endif %}
+    </div>
+    <a href="{% url 'clientes_lista' %}" class="dp-btn dp-btn-ghost">← Volver</a>
+</div>
+
+<form method="post" style="max-width:760px;">
+    {% csrf_token %}
+    <div class="dp-card">
+        <div class="dp-card-title">Identificación</div>
+        <div class="dp-grid-2">
+            <div class="dp-field">
+                <label class="dp-label">{{ form.nombre.label }}</label>{{ form.nombre }}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ form.sucursal.label }}</label>{{ form.sucursal }}
+            </div>
+        </div>
+        <div class="dp-field" style="max-width:200px;">
+            <label class="dp-label">{{ form.tipo.label }}</label>{{ form.tipo }}
+        </div>
+    </div>
+
+    <div class="dp-card">
+        <div class="dp-card-title">Dirección</div>
+        <div class="dp-field">
+            <label class="dp-label">{{ form.direccion.label }}</label>{{ form.direccion }}
+        </div>
+        <div class="dp-grid-3">
+            <div class="dp-field">
+                <label class="dp-label">{{ form.cp.label }}</label>{{ form.cp }}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ form.poblacion.label }}</label>{{ form.poblacion }}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ form.provincia.label }}</label>{{ form.provincia }}
+            </div>
+        </div>
+        <div class="dp-field" style="max-width:200px;">
+            <label class="dp-label">{{ form.pais.label }}</label>{{ form.pais }}
+        </div>
+    </div>
+
+    <div class="dp-card">
+        <div class="dp-card-title">Logística</div>
+        <div style="display:flex;gap:24px;margin-bottom:16px;">
+            <label class="dp-check">{{ form.necesita_plataforma }} {{ form.necesita_plataforma.label }}</label>
+            <label class="dp-check">{{ form.accede_trailer }} {{ form.accede_trailer.label }}</label>
+        </div>
+        <div class="dp-field">
+            <label class="dp-label">{{ form.observaciones.label }}</label>{{ form.observaciones }}
+        </div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <a href="{% url 'clientes_lista' %}" class="dp-btn dp-btn-ghost">Cancelar</a>
+        <button type="submit" class="dp-btn dp-btn-primary">Guardar cliente</button>
+    </div>
+</form>
+{% endblock %}

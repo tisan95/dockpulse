@@ -1,115 +1,170 @@
-{% extends "accesos/base.html" %}
+{% extends 'accesos/base.html' %}
 {% block title %}Check-in{% endblock %}
 
-{% block content %}
+{% block head_extra %}
+<style>
+.info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.info-cell { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+.info-cell-lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 3px; }
+.info-cell-val { font-size: 14px; font-weight: 600; color: var(--text); }
+.badge-tipo-TRD { background: rgba(56,189,248,0.12); color: var(--accent); border: 1px solid rgba(56,189,248,0.2); }
+.badge-tipo-BLK { background: rgba(129,140,248,0.12); color: var(--accent2); border: 1px solid rgba(129,140,248,0.2); }
+.badge-tipo-BDP { background: rgba(74,222,128,0.12); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+.badge-tipo-EXW { background: rgba(250,204,21,0.12); color: var(--yellow); border: 1px solid rgba(250,204,21,0.2); }
+.badge-tipo-ENT { background: rgba(248,113,113,0.12); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+</style>
+{% endblock %}
 
-{% if not tipo %}
-<!-- Selector de tipo -->
-<div style="min-height:70vh;display:flex;align-items:center;justify-content:center;">
-    <div style="width:100%;max-width:580px;">
-        <h1 style="font-size:24px;font-weight:700;text-align:center;margin-bottom:6px;">Nuevo registro</h1>
-        <p style="text-align:center;color:var(--text-muted);font-size:14px;margin-bottom:32px;">
-            ¿Qué tipo de operación vas a registrar?
-        </p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-            <a href="?tipo=ENTRADA" style="text-decoration:none;
-               background:linear-gradient(145deg,rgba(14,165,233,0.15),rgba(99,102,241,0.1));
-               border:1px solid rgba(56,189,248,0.3);border-radius:16px;
-               padding:36px 24px;text-align:center;transition:border-color 0.2s,transform 0.15s;
-               display:block;" onmouseover="this.style.borderColor='rgba(56,189,248,0.6)';this.style.transform='translateY(-2px)'"
-               onmouseout="this.style.borderColor='rgba(56,189,248,0.3)';this.style.transform='translateY(0)'">
-                <div style="font-size:44px;margin-bottom:12px;">📦</div>
-                <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:4px;">Recepción</div>
-                <div style="font-size:12px;color:var(--text-muted);">Contenedor del puerto</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Importación · OC · BL</div>
-            </a>
-            <a href="?tipo=SALIDA" style="text-decoration:none;
-               background:linear-gradient(145deg,rgba(139,92,246,0.15),rgba(99,102,241,0.1));
-               border:1px solid rgba(129,140,248,0.3);border-radius:16px;
-               padding:36px 24px;text-align:center;transition:border-color 0.2s,transform 0.15s;
-               display:block;" onmouseover="this.style.borderColor='rgba(129,140,248,0.6)';this.style.transform='translateY(-2px)'"
-               onmouseout="this.style.borderColor='rgba(129,140,248,0.3)';this.style.transform='translateY(0)'">
-                <div style="font-size:44px;margin-bottom:12px;">🚚</div>
-                <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:4px;">Expedición</div>
-                <div style="font-size:12px;color:var(--text-muted);">Salida de mercancía</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Gran cuenta · Paquetería</div>
-            </a>
-        </div>
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <div>
+        <h1 style="font-size:22px; font-weight:700;">Check-in</h1>
+        <p style="font-size:13px; color:var(--text-muted); margin-top:3px;">Registro de entrada de vehículo</p>
     </div>
+    <a href="{% url 'pantalla' %}" class="dp-btn dp-btn-ghost">← Pantalla</a>
+</div>
+
+{% if error %}
+<div class="dp-alert dp-alert-error">{{ error }}</div>
+{% endif %}
+
+{% if not checkin_form %}
+{# ── PASO 1: Buscar ── #}
+<div class="dp-card" style="max-width:520px; margin:0 auto;">
+    <div class="dp-card-title">Buscar expedición o chofer</div>
+    <div class="dp-card-sub">Introduce el nº de expedición (ej: 24TRD000101) o el DNI del chofer</div>
+
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="buscar">
+        <div class="dp-field">
+            <label class="dp-label">{{ buscar_form.busqueda.label }}</label>
+            {{ buscar_form.busqueda }}
+        </div>
+        <button type="submit" class="dp-btn dp-btn-primary" style="width:100%;">Buscar</button>
+    </form>
 </div>
 
 {% else %}
-<div style="max-width:700px;">
-    <!-- Breadcrumb -->
-    <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);margin-bottom:20px;">
-        <a href="{% url 'checkin' %}" style="color:var(--text-muted);text-decoration:none;">Check-in</a>
-        <span>›</span>
-        <span class="dp-badge {% if tipo == 'ENTRADA' %}badge-azul{% else %}badge-morado{% endif %}">
-            {% if tipo == 'ENTRADA' %}📦 Recepción{% else %}🚚 Expedición{% endif %}
-        </span>
+{# ── PASO 2: Confirmar ── #}
+{% if expedicion %}
+<div class="dp-card" style="margin-bottom:16px;">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+        <span class="dp-badge badge-tipo-{{ expedicion.tipo }}">{{ expedicion.tipo }}</span>
+        <span style="font-family:monospace; font-weight:700; font-size:15px; color:var(--accent);">{{ expedicion.numero }}</span>
+        <span style="color:var(--text-muted); font-size:13px;">{{ expedicion.get_estado_display }}</span>
     </div>
-
-    <div class="dp-card">
-        {% if tipo == 'ENTRADA' %}
-        <div class="dp-card-title">Check-in — Recepción de contenedor</div>
-        <p class="dp-card-sub">Camión procedente del puerto con contenedor o mercancía de importación.</p>
-        {% else %}
-        <div class="dp-card-title">Check-in — Expedición</div>
-        <p class="dp-card-sub">Camión de salida hacia cliente, gran cuenta o agencia de mensajería.</p>
-        {% endif %}
-
-        <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="tipo" value="{{ tipo }}">
-
-            <div class="dp-section">Vehículo y conductor</div>
-            <div class="dp-grid-2">
-                {% for field in form %}
-                    {% if field.name == 'dni_chofer' or field.name == 'nombre_chofer' or field.name == 'matricula_tractora' or field.name == 'matricula_remolque' or field.name == 'agencia' or field.name == 'muelle' %}
-                    <div class="dp-field">
-                        <label class="dp-label">{{ field.label }}</label>
-                        {{ field }}
-                        {% if field.errors %}<span style="color:var(--red);font-size:11px;margin-top:2px;display:block;">{{ field.errors.0 }}</span>{% endif %}
-                    </div>
-                    {% endif %}
-                {% endfor %}
-            </div>
-
-            {% if tipo == 'ENTRADA' %}
-            <div class="dp-section">Datos del contenedor</div>
-            <div class="dp-grid-2">
-                {% for field in form %}
-                    {% if field.name == 'numero_contenedor' or field.name == 'orden_compra' or field.name == 'puerto_origen' or field.name == 'bultos_declarados' %}
-                    <div class="dp-field">
-                        <label class="dp-label">{{ field.label }}</label>
-                        {{ field }}
-                        {% if field.errors %}<span style="color:var(--red);font-size:11px;margin-top:2px;display:block;">{{ field.errors.0 }}</span>{% endif %}
-                    </div>
-                    {% endif %}
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="dp-section">Datos de la expedición</div>
-            <div class="dp-grid-2">
-                {% for field in form %}
-                    {% if field.name == 'tipo_salida' or field.name == 'cliente' or field.name == 'agencia_mensajeria' or field.name == 'num_pedidos' %}
-                    <div class="dp-field">
-                        <label class="dp-label">{{ field.label }}</label>
-                        {{ field }}
-                        {% if field.errors %}<span style="color:var(--red);font-size:11px;margin-top:2px;display:block;">{{ field.errors.0 }}</span>{% endif %}
-                    </div>
-                    {% endif %}
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <div style="display:flex;gap:10px;margin-top:8px;">
-                <button type="submit" class="dp-btn dp-btn-primary">Registrar entrada ›</button>
-                <a href="{% url 'checkin' %}" class="dp-btn dp-btn-ghost">Cancelar</a>
-            </div>
-        </form>
+    <div class="info-grid">
+        <div class="info-cell">
+            <div class="info-cell-lbl">Cliente</div>
+            <div class="info-cell-val">{{ expedicion.cliente_display }}</div>
+        </div>
+        <div class="info-cell">
+            <div class="info-cell-lbl">Destino</div>
+            <div class="info-cell-val">{{ expedicion.destino|default:"—" }}</div>
+        </div>
+        <div class="info-cell">
+            <div class="info-cell-lbl">Agencia</div>
+            <div class="info-cell-val">{{ expedicion.agencia_display }}</div>
+        </div>
+        <div class="info-cell">
+            <div class="info-cell-lbl">Cita</div>
+            <div class="info-cell-val">{{ expedicion.hora_cita|time:"H:i"|default:"—" }}</div>
+        </div>
+        <div class="info-cell">
+            <div class="info-cell-lbl">Palets previstos</div>
+            <div class="info-cell-val">{{ expedicion.palets_previstos|default:"—" }}</div>
+        </div>
+        <div class="info-cell">
+            <div class="info-cell-lbl">SGA</div>
+            <div class="info-cell-val" style="font-family:monospace; font-size:12px;">{{ expedicion.sga|default:"—" }}</div>
+        </div>
     </div>
+</div>
+{% elif chofer %}
+<div class="dp-alert dp-alert-info">
+    Chofer encontrado: <strong>{{ chofer.nombre }}</strong> — DNI {{ chofer.dni }}
+    {% if chofer.matricula_habitual %} — Matrícula habitual: <strong>{{ chofer.matricula_habitual }}</strong>{% endif %}
 </div>
 {% endif %}
 
+<div class="dp-card">
+    <div class="dp-card-title">Confirmar entrada</div>
+    <div class="dp-card-sub">Verifica o corrige los datos del vehículo antes de registrar</div>
+
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="confirmar">
+        {% if expedicion %}<input type="hidden" name="expedicion_id" value="{{ expedicion.pk }}">{% endif %}
+
+        <div class="dp-grid-2">
+            <div class="dp-field">
+                <label class="dp-label">{{ checkin_form.muelle.label }}</label>
+                {{ checkin_form.muelle }}
+            </div>
+        </div>
+
+        <div class="dp-section">Datos del chofer</div>
+        <div class="dp-grid-3">
+            <div class="dp-field">
+                <label class="dp-label">{{ checkin_form.dni_chofer.label }}</label>
+                {{ checkin_form.dni_chofer }}
+            </div>
+            <div class="dp-field" style="grid-column: span 2;">
+                <label class="dp-label">{{ checkin_form.nombre_chofer.label }}</label>
+                {{ checkin_form.nombre_chofer }}
+            </div>
+        </div>
+
+        <div class="dp-section">Vehículo</div>
+        <div class="dp-grid-2">
+            <div class="dp-field">
+                <label class="dp-label">{{ checkin_form.matricula_tractora.label }}</label>
+                {{ checkin_form.matricula_tractora }}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ checkin_form.matricula_remolque.label }}</label>
+                {{ checkin_form.matricula_remolque }}
+            </div>
+        </div>
+
+        <div class="dp-field">
+            <label class="dp-label">{{ checkin_form.observaciones.label }}</label>
+            {{ checkin_form.observaciones }}
+        </div>
+
+        {% if checkin_form.errors %}
+        <div class="dp-alert dp-alert-error" style="margin-bottom:14px;">
+            {% for field in checkin_form %}{% for e in field.errors %}<div>{{ field.label }}: {{ e }}</div>{% endfor %}{% endfor %}
+        </div>
+        {% endif %}
+
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <a href="{% url 'checkin' %}" class="dp-btn dp-btn-ghost">← Volver a buscar</a>
+            <button type="submit" class="dp-btn dp-btn-primary">Registrar entrada</button>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dniInput = document.querySelector('[name=dni_chofer]');
+    const nombreInput = document.querySelector('[name=nombre_chofer]');
+    const matriculaInput = document.querySelector('[name=matricula_tractora]');
+    if (!dniInput) return;
+    dniInput.addEventListener('blur', function() {
+        const dni = this.value.trim();
+        if (!dni) return;
+        fetch('/api/chofer/?dni=' + encodeURIComponent(dni))
+            .then(r => r.json())
+            .then(data => {
+                if (data.found) {
+                    if (nombreInput && !nombreInput.value) nombreInput.value = data.nombre;
+                    if (matriculaInput && !matriculaInput.value) matriculaInput.value = data.matricula;
+                }
+            });
+    });
+});
+</script>
 {% endblock %}

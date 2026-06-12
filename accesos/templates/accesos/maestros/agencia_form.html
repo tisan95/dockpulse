@@ -1,0 +1,51 @@
+{% extends 'accesos/base.html' %}
+{% block title %}{{ accion }} agencia{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <div>
+        <h1 style="font-size:22px;font-weight:700;">{{ accion }} agencia</h1>
+        {% if obj %}<p style="font-size:13px;color:var(--text-muted);margin-top:3px;">{{ obj.nick }} — {{ obj.nombre }}</p>{% endif %}
+    </div>
+    <a href="{% url 'agencias_lista' %}" class="dp-btn dp-btn-ghost">← Volver</a>
+</div>
+
+<form method="post" style="max-width:680px;">
+    {% csrf_token %}
+    <div class="dp-card">
+        <div class="dp-grid-2">
+            <div class="dp-field">
+                <label class="dp-label">{{ form.nick.label }}</label>{{ form.nick }}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ form.nombre.label }}</label>{{ form.nombre }}
+            </div>
+        </div>
+        <div class="dp-grid-2">
+            <div class="dp-field">
+                <label class="dp-label">{{ form.cif.label }}</label>{{ form.cif }}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ form.contacto.label }}</label>{{ form.contacto }}
+            </div>
+        </div>
+        <div class="dp-grid-2">
+            <div class="dp-field">
+                <label class="dp-label">{{ form.email.label }}</label>{{ form.email }}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ form.telefono.label }}</label>{{ form.telefono }}
+            </div>
+        </div>
+        {% if form.errors %}
+        <div class="dp-alert dp-alert-error">
+            {% for field in form %}{% for e in field.errors %}<div>{{ field.label }}: {{ e }}</div>{% endfor %}{% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <a href="{% url 'agencias_lista' %}" class="dp-btn dp-btn-ghost">Cancelar</a>
+        <button type="submit" class="dp-btn dp-btn-primary">Guardar agencia</button>
+    </div>
+</form>
+{% endblock %}

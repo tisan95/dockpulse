@@ -1,0 +1,136 @@
+{% extends 'accesos/base.html' %}
+{% block title %}Expediciones{% endblock %}
+
+{% block head_extra %}
+<style>
+.filtros-bar { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 20px; }
+.filtros-bar .dp-field { margin-bottom: 0; }
+.filtros-bar label { font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px; }
+.filtros-bar input, .filtros-bar select { padding: 7px 11px; font-size: 13px; }
+.badge-tipo-TRD { background: rgba(56,189,248,0.12); color: var(--accent); border: 1px solid rgba(56,189,248,0.2); }
+.badge-tipo-BLK { background: rgba(129,140,248,0.12); color: var(--accent2); border: 1px solid rgba(129,140,248,0.2); }
+.badge-tipo-BDP { background: rgba(74,222,128,0.12); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+.badge-tipo-EXW { background: rgba(250,204,21,0.12); color: var(--yellow); border: 1px solid rgba(250,204,21,0.2); }
+.badge-tipo-ENT { background: rgba(248,113,113,0.12); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+.badge-estado { padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+.est-PENDIENTE   { background: rgba(100,116,139,0.12); color: var(--text-dim); border: 1px solid rgba(100,116,139,0.2); }
+.est-GESTIONADO  { background: rgba(56,189,248,0.12); color: var(--accent); border: 1px solid rgba(56,189,248,0.2); }
+.est-LANZADO     { background: rgba(129,140,248,0.12); color: var(--accent2); border: 1px solid rgba(129,140,248,0.2); }
+.est-PREPARADO   { background: rgba(74,222,128,0.12); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+.est-MUELLE      { background: rgba(250,204,21,0.12); color: var(--yellow); border: 1px solid rgba(250,204,21,0.2); }
+.est-ENVIADA     { background: rgba(100,116,139,0.08); color: var(--text-muted); border: 1px solid rgba(100,116,139,0.15); }
+.est-ANULADA     { background: rgba(248,113,113,0.08); color: #fca5a5; border: 1px solid rgba(248,113,113,0.15); text-decoration: line-through; }
+.action-select { padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border2);
+    background: var(--surface2); color: var(--text); font-size: 11px; cursor: pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <div>
+        <h1 style="font-size:22px; font-weight:700;">Expediciones</h1>
+        <p style="font-size:13px; color:var(--text-muted); margin-top:3px;">Citas registradas en el sistema</p>
+    </div>
+    <a href="{% url 'expedicion_crear' %}" class="dp-btn dp-btn-primary">+ Nueva expedición</a>
+</div>
+
+<div class="dp-card" style="padding:16px 20px;">
+    <form method="get" class="filtros-bar">
+        <div class="dp-field">
+            <label>Fecha</label>
+            <input type="date" name="fecha" value="{{ fecha }}" class="dp-input">
+        </div>
+        <div class="dp-field">
+            <label>Estado</label>
+            <select name="estado" class="dp-input">
+                <option value="">Todos</option>
+                {% for val, label in estados %}
+                <option value="{{ val }}" {% if estado == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="dp-field">
+            <label>Tipo</label>
+            <select name="tipo" class="dp-input">
+                <option value="">Todos</option>
+                {% for val, label in tipos %}
+                <option value="{{ val }}" {% if tipo == val %}selected{% endif %}>{{ val }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="dp-btn dp-btn-ghost">Filtrar</button>
+        <a href="{% url 'expediciones_lista' %}" class="dp-btn dp-btn-ghost">Hoy</a>
+    </form>
+</div>
+
+<div class="dp-card" style="padding:0; overflow:hidden;">
+    {% if expediciones %}
+    <table>
+        <thead>
+            <tr>
+                <th>Nº expedición</th>
+                <th>Tipo</th>
+                <th>Cita</th>
+                <th>Cliente / Destino</th>
+                <th>Agencia</th>
+                <th>Muelle</th>
+                <th>Palets</th>
+                <th>SGA</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for exp in expediciones %}
+            <tr>
+                <td>
+                    <span style="font-family:monospace; font-weight:600; color:var(--accent);">{{ exp.numero }}</span>
+                </td>
+                <td>
+                    <span class="dp-badge badge-tipo-{{ exp.tipo }}">{{ exp.tipo }}</span>
+                </td>
+                <td style="color:var(--text-dim); white-space:nowrap;">
+                    {% if exp.hora_cita %}{{ exp.hora_cita|time:"H:i" }}{% else %}—{% endif %}
+                </td>
+                <td>
+                    <div style="font-weight:500;">{{ exp.cliente_display }}</div>
+                    {% if exp.destino %}<div style="font-size:11px; color:var(--text-muted);">{{ exp.destino }}</div>{% endif %}
+                </td>
+                <td style="color:var(--text-dim);">{{ exp.agencia_display }}</td>
+                <td style="color:var(--text-dim);">
+                    {% if exp.muelle %}M{{ exp.muelle.numero }}{% else %}<span style="color:var(--border2)">—</span>{% endif %}
+                </td>
+                <td style="color:var(--text-dim); text-align:right;">
+                    {{ exp.palets_previstos|default:"—" }}
+                </td>
+                <td style="font-family:monospace; font-size:11px; color:var(--text-muted);">
+                    {{ exp.sga|default:"—" }}
+                </td>
+                <td>
+                    <span class="badge-estado est-{{ exp.estado }}">{{ exp.get_estado_display }}</span>
+                </td>
+                <td>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <a href="{% url 'expedicion_editar' exp.pk %}" class="dp-btn dp-btn-ghost dp-btn-xs">Editar</a>
+                        <form method="post" action="{% url 'expedicion_estado' exp.pk %}" style="display:flex;gap:4px;">
+                            {% csrf_token %}
+                            <select name="estado" class="action-select">
+                                {% for val, label in estados %}
+                                <option value="{{ val }}" {% if exp.estado == val %}selected{% endif %}>{{ val }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="dp-btn dp-btn-ghost dp-btn-xs">OK</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="padding:40px; text-align:center; color:var(--text-muted);">
+        No hay expediciones para los filtros seleccionados
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

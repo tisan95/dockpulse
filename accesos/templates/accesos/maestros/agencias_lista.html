@@ -1,0 +1,54 @@
+{% extends 'accesos/base.html' %}
+{% block title %}Agencias{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <div>
+        <h1 style="font-size:22px;font-weight:700;">Agencias</h1>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:3px;">{{ agencias|length }} registros</p>
+    </div>
+    <a href="{% url 'agencia_crear' %}" class="dp-btn dp-btn-primary">+ Nueva agencia</a>
+</div>
+
+<div class="dp-card" style="padding:14px 20px;margin-bottom:16px;">
+    <form method="get" style="display:flex;gap:10px;">
+        <div class="dp-field" style="margin:0;flex:1;">
+            <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nick o nombre…" class="dp-input">
+        </div>
+        <button type="submit" class="dp-btn dp-btn-ghost">Filtrar</button>
+        <a href="{% url 'agencias_lista' %}" class="dp-btn dp-btn-ghost">Limpiar</a>
+    </form>
+</div>
+
+<div class="dp-card" style="padding:0;overflow:hidden;">
+    {% if agencias %}
+    <table>
+        <thead>
+            <tr><th>Nick</th><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Contacto</th><th>Activa</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for a in agencias %}
+            <tr>
+                <td style="font-family:monospace;font-weight:700;color:var(--accent);">{{ a.nick }}</td>
+                <td>{{ a.nombre }}</td>
+                <td style="color:var(--text-dim);font-size:12px;">{{ a.email|default:"—" }}</td>
+                <td style="color:var(--text-dim);font-size:12px;">{{ a.telefono|default:"—" }}</td>
+                <td style="color:var(--text-dim);font-size:12px;">{{ a.contacto|default:"—" }}</td>
+                <td>
+                    <form method="post" action="{% url 'agencia_toggle' a.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="dp-btn dp-btn-xs {% if a.activa %}dp-btn-ghost{% else %}dp-btn-danger{% endif %}">
+                            {% if a.activa %}Activa{% else %}Inactiva{% endif %}
+                        </button>
+                    </form>
+                </td>
+                <td><a href="{% url 'agencia_editar' a.pk %}" class="dp-btn dp-btn-ghost dp-btn-xs">Editar</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="padding:40px;text-align:center;color:var(--text-muted);">No hay agencias registradas</div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends 'accesos/base.html' %}
+{% block title %}Clientes{% endblock %}
+
+{% block head_extra %}
+<style>
+.badge-tipo-TRD { background:rgba(56,189,248,0.12);color:var(--accent);border:1px solid rgba(56,189,248,0.2); }
+.badge-tipo-BLK { background:rgba(129,140,248,0.12);color:var(--accent2);border:1px solid rgba(129,140,248,0.2); }
+.badge-tipo-BDP { background:rgba(74,222,128,0.12);color:var(--green);border:1px solid rgba(74,222,128,0.2); }
+.badge-tipo-EXW { background:rgba(250,204,21,0.12);color:var(--yellow);border:1px solid rgba(250,204,21,0.2); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <div>
+        <h1 style="font-size:22px;font-weight:700;">Clientes</h1>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:3px;">{{ clientes|length }} registros</p>
+    </div>
+    <a href="{% url 'cliente_crear' %}" class="dp-btn dp-btn-primary">+ Nuevo cliente</a>
+</div>
+
+<div class="dp-card" style="padding:14px 20px;margin-bottom:16px;">
+    <form method="get" style="display:flex;gap:10px;align-items:flex-end;">
+        <div class="dp-field" style="margin:0;flex:1;">
+            <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre, sucursal o ciudad…" class="dp-input">
+        </div>
+        <div class="dp-field" style="margin:0;">
+            <select name="tipo" class="dp-input">
+                <option value="">Todos los tipos</option>
+                {% for val, label in tipos %}
+                <option value="{{ val }}" {% if tipo == val %}selected{% endif %}>{{ val }} — {{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="dp-btn dp-btn-ghost">Filtrar</button>
+        <a href="{% url 'clientes_lista' %}" class="dp-btn dp-btn-ghost">Limpiar</a>
+    </form>
+</div>
+
+<div class="dp-card" style="padding:0;overflow:hidden;">
+    {% if clientes %}
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre</th><th>Sucursal / FC</th><th>Tipo</th>
+                <th>Población</th><th>País</th>
+                <th>Plataforma</th><th>Tráiler</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in clientes %}
+            <tr>
+                <td style="font-weight:500;">{{ c.nombre }}</td>
+                <td style="color:var(--text-dim);font-size:12px;">{{ c.sucursal|default:"—" }}</td>
+                <td><span class="dp-badge badge-tipo-{{ c.tipo }}">{{ c.tipo }}</span></td>
+                <td style="color:var(--text-dim);">{{ c.poblacion|default:"—" }}</td>
+                <td style="color:var(--text-dim);">{{ c.pais }}</td>
+                <td style="text-align:center;">
+                    {% if c.necesita_plataforma %}
+                    <span style="color:var(--yellow);">●</span>
+                    {% else %}
+                    <span style="color:var(--border2);">—</span>
+                    {% endif %}
+                </td>
+                <td style="text-align:center;">
+                    {% if c.accede_trailer %}
+                    <span style="color:var(--green);">●</span>
+                    {% else %}
+                    <span style="color:var(--red);">✕</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'cliente_editar' c.pk %}" class="dp-btn dp-btn-ghost dp-btn-xs">Editar</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="padding:40px;text-align:center;color:var(--text-muted);">No hay clientes con esos filtros</div>
+    {% endif %}
+</div>
+{% endblock %}

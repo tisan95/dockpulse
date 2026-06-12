@@ -1,0 +1,53 @@
+{% extends 'accesos/base.html' %}
+{% block title %}Choferes{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <div>
+        <h1 style="font-size:22px;font-weight:700;">Choferes</h1>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:3px;">{{ choferes|length }} registros</p>
+    </div>
+    <a href="{% url 'chofer_crear' %}" class="dp-btn dp-btn-primary">+ Nuevo chofer</a>
+</div>
+
+<div class="dp-card" style="padding:14px 20px;margin-bottom:16px;">
+    <form method="get" style="display:flex;gap:10px;">
+        <div class="dp-field" style="margin:0;flex:1;">
+            <input type="text" name="q" value="{{ q }}" placeholder="Buscar por DNI, nombre o matrícula…" class="dp-input">
+        </div>
+        <button type="submit" class="dp-btn dp-btn-ghost">Filtrar</button>
+        <a href="{% url 'choferes_lista' %}" class="dp-btn dp-btn-ghost">Limpiar</a>
+    </form>
+</div>
+
+<div class="dp-card" style="padding:0;overflow:hidden;">
+    {% if choferes %}
+    <table>
+        <thead>
+            <tr><th>DNI / NIE</th><th>Nombre</th><th>Teléfono</th><th>Matrícula habitual</th><th>Activo</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for ch in choferes %}
+            <tr>
+                <td style="font-family:monospace;font-weight:600;color:var(--accent);">{{ ch.dni }}</td>
+                <td>{{ ch.nombre }}</td>
+                <td style="color:var(--text-dim);">{{ ch.telefono|default:"—" }}</td>
+                <td style="font-family:monospace;color:var(--text-dim);">{{ ch.matricula_habitual|default:"—" }}</td>
+                <td>
+                    <form method="post" action="{% url 'chofer_toggle' ch.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="dp-btn dp-btn-xs {% if ch.activo %}dp-btn-ghost{% else %}dp-btn-danger{% endif %}">
+                            {% if ch.activo %}Activo{% else %}Inactivo{% endif %}
+                        </button>
+                    </form>
+                </td>
+                <td><a href="{% url 'chofer_editar' ch.pk %}" class="dp-btn dp-btn-ghost dp-btn-xs">Editar</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="padding:40px;text-align:center;color:var(--text-muted);">No hay choferes con esa búsqueda</div>
+    {% endif %}
+</div>
+{% endblock %}
