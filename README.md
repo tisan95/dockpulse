@@ -1,131 +1,50 @@
 # DockPulse
 
-Sistema de gestión de accesos y muelles para distribuidoras logísticas. Diseñado para el flujo real de una plataforma tipo Cecotec: recepción de contenedores desde el puerto y expedición hacia grandes cuentas y paquetería.
+Sistema de gestión de muelles y expediciones para plataformas logísticas. Digitaliza el flujo completo de entrada y salida de camiones — desde la cita previa hasta la generación del documento de transporte — sustituyendo hojas de cálculo y registros manuales.
 
 ---
 
-## ¿Qué hace?
+## Qué hace
 
-DockPulse digitaliza el control de entrada y salida de camiones en un almacén, diferenciando dos flujos operativos:
+- **Expediciones** — Registro previo de citas: qué camión viene, cuándo y a qué muelle, con estado en tiempo real (Pendiente → Preparado → En muelle → Enviada)
+- **Check-in** — Entrada de vehículos en 2 pasos: buscar por número de expedición o DNI del chofer → confirmar datos del vehículo (autocompleta nombre y matrícula desde la BD de choferes)
+- **Check-out** — Salida con registro de palets reales, documentación y precinto
+- **Pantalla TV** — Vista en tiempo real para almacén: grid de muelles con colores por estado + expediciones pendientes del día + alerta de tiempo por camión
+- **Recepciones ASN** — Registro de llegada de mercancía con control de referencias y unidades (declaradas vs. recibidas), cierre y control de diferencias
+- **Documentos** — DOC1 (nota de carga) para expediciones nacionales y CMR (carta de porte internacional) para exportaciones, listos para imprimir o guardar como PDF
+- **Maestros** — CRUD de Clientes, Agencias y Choferes
+- **Histórico y exportación** — Análisis por rango de fechas, top clientes/agencias, descarga CSV compatible con Excel
 
-- **Recepción**: camiones que llegan del puerto con contenedores. Se registra número de contenedor, orden de compra, puerto de origen y bultos declarados vs. reales.
-- **Expedición**: camiones que salen con mercancía hacia clientes (gran cuenta como Mercadona o Amazon) o agencias de mensajería (GLS, SEUR, UPS…).
+## Tipos de expedición
 
-Cada vehículo se asigna a un muelle con estado en tiempo real, y el sistema alerta visualmente cuando un camión lleva demasiado tiempo en planta.
-
----
-
-## Pantallas
-
-### Pantalla de almacén (TV)
-Vista en tiempo real para poner en una pantalla grande del almacén. Muestra:
-- Grid de muelles con colores por estado (verde = libre, amarillo = operando, rojo = ocupado/en espera)
-- Tabla de vehículos activos con alerta de tiempo (verde < 2h, amarillo 2–4h, rojo > 4h)
-- Botones para avanzar el estado del muelle sin salir de la pantalla
-
-### Check-in
-Formulario bifurcado según el tipo de operación:
-- **Recepción**: datos del vehículo + nº contenedor, OC, puerto de origen, bultos declarados
-- **Expedición**: datos del vehículo + tipo (gran cuenta / paquetería), cliente, agencia mensajería, nº pedidos
-
-### Check-out
-Búsqueda por matrícula tractora. Muestra toda la información del vehículo y permite:
-- Confirmar salida con hora exacta
-- Registrar bultos reales descargados (entradas)
-- Indicar si la documentación es correcta
-- Añadir número de precinto
-
-### Dashboard
-Métricas operativas del día:
-- Vehículos en planta, recepciones y expediciones del día
-- Incidencias abiertas (con alerta si hay urgentes)
-- Documentación incorrecta
-- Vehículos activos con su estado
-- Top 5 agencias por volumen de visitas
-
-### Incidencias
-Desde cualquier vehículo activo se puede registrar una incidencia con tipo (documentación, bultos, avería, carga, espera, otro), descripción y flag de urgente.
+| Código | Tipo | Documento |
+|--------|------|-----------|
+| TRD | Gran cuenta nacional | DOC1 |
+| BLK | Distribuidores / Bulk | DOC1 |
+| BDP | Paquetería | DOC1 |
+| EXW | Exportación internacional | CMR |
+| ENT | Entrada / Recepción inbound | ASN |
 
 ---
 
-## Modelos de datos
+## Instalación
 
-### `Muelle`
-| Campo | Descripción |
-|---|---|
-| `numero` | Identificador del muelle (M01, M02…) |
-| `tipo` | RECEPCION / EXPEDICION / MIXTO |
-| `activo` | Habilitado o no |
-
-El estado del muelle (`LIBRE`, `ESPERANDO`, `OPERANDO`, `LISTO`) se calcula dinámicamente desde la visita activa asignada.
-
-### `Visit`
-| Campo | Descripción |
-|---|---|
-| `tipo` | ENTRADA (recepción) / SALIDA (expedición) |
-| `estado` | ESPERANDO → OPERANDO → LISTO → SALIDO |
-| `muelle` | FK a Muelle |
-| `dni_chofer`, `nombre_chofer` | Datos del conductor |
-| `matricula_tractora`, `matricula_remolque` | Vehículo |
-| `agencia` | Transportista |
-| `entrada` | Timestamp automático de llegada |
-| — *Solo ENTRADA* — | |
-| `numero_contenedor` | Nº contenedor o Bill of Lading |
-| `orden_compra` | OC asociada |
-| `puerto_origen` | Puerto de procedencia |
-| `bultos_declarados` / `bultos_reales` | Control de merma |
-| — *Solo SALIDA* — | |
-| `tipo_salida` | GRAN_CUENTA / PAQUETERIA |
-| `cliente` | Destinatario |
-| `agencia_mensajeria` | GLS, SEUR, UPS… |
-| `num_pedidos` | Pedidos cargados |
-| — *Check-out* — | |
-| `documentacion_ok` | Boolean |
-| `precinto` | Número de precinto |
-| `salida` | Timestamp de salida |
-
-### `Incidencia`
-| Campo | Descripción |
-|---|---|
-| `visita` | FK a Visit |
-| `tipo` | DOCUMENTACION / BULTOS / AVERIA / CARGA / ESPERA / OTRO |
-| `descripcion` | Texto libre |
-| `urgente` | Boolean |
-| `resuelta` | Boolean |
-
----
-
-## Instalación y arranque
-
-**Requisitos**: Python 3.10+
+**Requisitos:** Python 3.10+
 
 ```bash
-# 1. Clonar el repositorio
+# 1. Clonar
 git clone https://github.com/tisan95/dockpulse.git
 cd dockpulse
 
-# 2. Crear entorno virtual e instalar dependencias
+# 2. Entorno virtual
 python3 -m venv venv
-source venv/bin/activate       # Windows: venv\Scripts\activate
-pip install django
+source venv/bin/activate   # Windows: venv\Scripts\activate
+pip install django openpyxl
 
-# 3. Aplicar migraciones
+# 3. Migrar base de datos
 python manage.py migrate
 
-# 4. Cargar muelles iniciales (M01–M08)
-python manage.py shell -c "
-from accesos.models import Muelle
-muelles = [
-    ('01','RECEPCION'),('02','RECEPCION'),('03','RECEPCION'),
-    ('04','EXPEDICION'),('05','EXPEDICION'),('06','EXPEDICION'),
-    ('07','MIXTO'),('08','MIXTO'),
-]
-for num, tipo in muelles:
-    Muelle.objects.get_or_create(numero=num, defaults={'tipo': tipo})
-print('Muelles creados:', Muelle.objects.count())
-"
-
-# 5. Arrancar el servidor
+# 4. Arrancar
 python manage.py runserver
 ```
 
@@ -133,33 +52,45 @@ Abre el navegador en **http://127.0.0.1:8000**
 
 ---
 
-## URLs
+## URLs principales
 
-| Ruta | Vista | Descripción |
-|---|---|---|
-| `/` | Pantalla almacén | Página principal — para TV |
-| `/pantalla/` | Pantalla almacén | Igual que `/` |
-| `/checkin/` | Check-in | Registro de entrada de camión |
-| `/checkout/` | Check-out | Registro de salida |
-| `/dashboard/` | Dashboard | Métricas operativas |
-| `/visita/<id>/estado/` | Cambiar estado | Avanza el estado del muelle (POST) |
-| `/visita/<id>/incidencia/` | Nueva incidencia | Formulario de incidencia |
+| Ruta | Descripción |
+|------|-------------|
+| `/` | Pantalla TV — estado en tiempo real |
+| `/expediciones/` | Lista de expediciones con filtros |
+| `/expediciones/nueva/` | Crear expedición |
+| `/checkin/` | Registro de entrada de camión |
+| `/checkout/` | Registro de salida de camión |
+| `/asn/` | Recepciones ASN (inbound) |
+| `/doc/doc1/<id>/` | Generar DOC1 imprimible |
+| `/doc/cmr/<id>/` | Generar CMR imprimible |
+| `/dashboard/` | Métricas del día |
+| `/historico/` | Análisis histórico y exportación CSV |
+| `/maestros/clientes/` | Gestión de clientes |
+| `/maestros/agencias/` | Gestión de agencias |
+| `/maestros/choferes/` | Gestión de choferes |
+| `/api/chofer/?dni=…` | API autocompletado de chofer por DNI |
 
 ---
 
 ## Stack técnico
 
-- **Backend**: Django 4.2 (Python)
-- **Base de datos**: SQLite (desarrollo) — fácilmente sustituible por PostgreSQL en producción
-- **Frontend**: HTML/CSS vanilla con sistema de diseño dark propio, sin dependencias externas
-- **Despliegue**: compatible con cualquier servidor WSGI (Gunicorn + Nginx)
+- **Backend:** Django 4.2 (Python)
+- **Base de datos:** SQLite (desarrollo) — compatible con PostgreSQL en producción
+- **Frontend:** HTML/CSS vanilla, sistema de diseño dark propio, sin dependencias externas
+- **Despliegue:** compatible con cualquier servidor WSGI (Gunicorn + Nginx)
+
+---
+
+## Manual de uso
+
+Ver [MANUAL.md](MANUAL.md) para la guía completa de operación: check-in/check-out, gestión de expediciones, recepciones ASN, generación de documentos y exportación de datos.
 
 ---
 
 ## Próximos pasos sugeridos
 
-- [ ] Autenticación: roles por pantalla (control de accesos, operaciones, solo lectura)
-- [ ] Exportación de histórico a Excel/CSV
-- [ ] Citas previas: registrar camiones esperados antes de que lleguen
-- [ ] WebSockets para refresco en tiempo real sin meta-refresh
-- [ ] Tiempo medio por muelle y por agencia en el dashboard
+- Autenticación con roles (operador / administración / solo lectura)
+- WebSockets para refresco en tiempo real sin meta-refresh
+- Migración a PostgreSQL para entorno multi-usuario
+- Importación masiva de clientes y choferes desde Excel
