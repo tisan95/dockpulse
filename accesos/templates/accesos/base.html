@@ -229,12 +229,15 @@
             <a href="{% url 'checkout' %}"  {% if request.resolver_match.url_name == 'checkout'  %}class="active"{% endif %}>Check-out</a>
             <a href="{% url 'pantalla' %}"  {% if request.resolver_match.url_name == 'pantalla' or request.resolver_match.url_name == 'home' %}class="active"{% endif %}>Pantalla</a>
             <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>Dashboard</a>
+            <a href="{% url 'historico' %}" {% if request.resolver_match.url_name == 'historico' %}class="active"{% endif %}>Histórico</a>
             <div class="nav-group">
                 <a href="#" {% if 'clientes' in request.resolver_match.url_name or 'agencia' in request.resolver_match.url_name or 'chofer' in request.resolver_match.url_name %}class="active"{% endif %} style="cursor:default;">Maestros ▾</a>
                 <div class="nav-dropdown">
                     <a href="{% url 'clientes_lista' %}">Clientes</a>
                     <a href="{% url 'agencias_lista' %}">Agencias</a>
                     <a href="{% url 'choferes_lista' %}">Choferes</a>
+                    <div style="height:1px;background:var(--border);margin:4px 0;"></div>
+                    <a href="{% url 'asn_lista' %}">Recepciones ASN</a>
                 </div>
             </div>
         </nav>

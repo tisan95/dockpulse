@@ -1,0 +1,81 @@
+{% extends 'accesos/base.html' %}
+{% block title %}Recepciones ASN{% endblock %}
+
+{% block head_extra %}
+<style>
+.est-PENDIENTE  { background:rgba(100,116,139,0.12);color:var(--text-dim);border:1px solid rgba(100,116,139,0.2); }
+.est-EN_PROCESO { background:rgba(250,204,21,0.12);color:var(--yellow);border:1px solid rgba(250,204,21,0.2); }
+.est-COMPLETADA { background:rgba(74,222,128,0.12);color:var(--green);border:1px solid rgba(74,222,128,0.2); }
+.est-INCIDENCIA { background:rgba(248,113,113,0.12);color:var(--red);border:1px solid rgba(248,113,113,0.2); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <div>
+        <h1 style="font-size:22px;font-weight:700;">Recepciones ASN</h1>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:3px;">Aviso de llegada de contenedores (inbound)</p>
+    </div>
+    <a href="{% url 'asn_crear' %}" class="dp-btn dp-btn-primary">+ Nuevo ASN</a>
+</div>
+
+<div class="dp-card" style="padding:14px 20px;margin-bottom:16px;">
+    <form method="get" style="display:flex;gap:10px;">
+        <select name="estado" class="dp-input" style="max-width:220px;">
+            <option value="">Todos los estados</option>
+            {% for val, label in estados %}
+            <option value="{{ val }}" {% if estado == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="dp-btn dp-btn-ghost">Filtrar</button>
+        <a href="{% url 'asn_lista' %}" class="dp-btn dp-btn-ghost">Limpiar</a>
+    </form>
+</div>
+
+<div class="dp-card" style="padding:0;overflow:hidden;">
+    {% if recepciones %}
+    <table>
+        <thead>
+            <tr>
+                <th>Expedición</th><th>Contenedor</th><th>BL</th>
+                <th>Proveedor</th><th>Puerto</th><th>Llegada prev.</th>
+                <th>Bultos dec.</th><th>Líneas</th><th>Estado</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in recepciones %}
+            <tr>
+                <td style="font-family:monospace;font-size:12px;color:var(--accent);">
+                    {{ r.expedicion.numero }}
+                </td>
+                <td style="font-family:monospace;font-weight:600;">{{ r.numero_contenedor|default:"—" }}</td>
+                <td style="font-family:monospace;font-size:11px;color:var(--text-muted);">{{ r.bill_of_lading|default:"—" }}</td>
+                <td style="color:var(--text-dim);">{{ r.proveedor|default:"—" }}</td>
+                <td><span class="dp-badge badge-azul">{{ r.get_puerto_origen_display }}</span></td>
+                <td style="color:var(--text-dim);">{{ r.fecha_llegada_prev|date:"d/m/Y"|default:"—" }}</td>
+                <td style="text-align:right;color:var(--text-dim);">{{ r.bultos_declarados|default:"—" }}</td>
+                <td style="text-align:center;">
+                    {% with total=r.total_lineas difs=r.lineas_con_diferencia %}
+                    <span style="font-weight:600;">{{ total }}</span>
+                    {% if difs > 0 %}
+                    <span class="dp-badge badge-rojo" style="margin-left:4px;">{{ difs }} dif.</span>
+                    {% endif %}
+                    {% endwith %}
+                </td>
+                <td>
+                    <span class="dp-badge est-{{ r.estado }}">{{ r.get_estado_display }}</span>
+                </td>
+                <td>
+                    <a href="{% url 'asn_detalle' r.pk %}" class="dp-btn dp-btn-ghost dp-btn-xs">Ver →</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="padding:40px;text-align:center;color:var(--text-muted);">
+        No hay recepciones ASN registradas
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

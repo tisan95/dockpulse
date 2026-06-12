@@ -390,3 +390,266 @@ def chofer_toggle(request, pk):
     chofer.activo = not chofer.activo
     chofer.save()
     return redirect('choferes_lista')
+
+
+# ── ASN / RECEPCIÓN INBOUND ───────────────────────────────────────────────────
+
+from .models import RecepcionASN, LineaASN
+from .forms import RecepcionASNForm, LineaASNForm, ConteoLineaForm, CierreRecepcionForm
+
+
+def asn_lista(request):
+    estado = request.GET.get('estado', '')
+    qs = (RecepcionASN.objects
+          .select_related('expedicion', 'hub_destino')
+          .prefetch_related('lineas'))
+    if estado:
+        qs = qs.filter(estado=estado)
+    return render(request, 'accesos/asn/asn_lista.html', {
+        'recepciones': qs,
+        'estado': estado,
+        'estados': RecepcionASN.ESTADO_CHOICES,
+    })
+
+
+def asn_crear(request):
+    form = RecepcionASNForm(request.POST or None)
+    if form.is_valid():
+        asn = form.save()
+        return redirect('asn_detalle', pk=asn.pk)
+    return render(request, 'accesos/asn/asn_form.html', {'form': form, 'accion': 'Nuevo ASN'})
+
+
+def asn_detalle(request, pk):
+    asn = get_object_or_404(RecepcionASN.objects.prefetch_related('lineas'), pk=pk)
+    linea_form = LineaASNForm()
+    cierre_form = CierreRecepcionForm(initial={
+        'bultos_recibidos': asn.bultos_declarados,
+        'estado': asn.estado,
+    })
+    return render(request, 'accesos/asn/asn_detalle.html', {
+        'asn': asn,
+        'linea_form': linea_form,
+        'cierre_form': cierre_form,
+    })
+
+
+def asn_editar(request, pk):
+    asn = get_object_or_404(RecepcionASN, pk=pk)
+    form = RecepcionASNForm(request.POST or None, instance=asn)
+    if form.is_valid():
+        form.save()
+        return redirect('asn_detalle', pk=asn.pk)
+    return render(request, 'accesos/asn/asn_form.html', {'form': form, 'accion': 'Editar ASN', 'asn': asn})
+
+
+def asn_linea_agregar(request, pk):
+    asn = get_object_or_404(RecepcionASN, pk=pk)
+    if request.method == 'POST':
+        form = LineaASNForm(request.POST)
+        if form.is_valid():
+            linea = form.save(commit=False)
+            linea.recepcion = asn
+            linea.save()
+    return redirect('asn_detalle', pk=pk)
+
+
+def asn_linea_contar(request, linea_id):
+    linea = get_object_or_404(LineaASN, pk=linea_id)
+    if request.method == 'POST':
+        form = ConteoLineaForm(request.POST)
+        if form.is_valid():
+            linea.unidades_recibidas = form.cleaned_data['unidades_recibidas']
+            linea.diferencia_ok      = form.cleaned_data['diferencia_ok']
+            linea.observaciones      = form.cleaned_data['observaciones']
+            linea.save()
+            if linea.recepcion.estado == 'PENDIENTE':
+                linea.recepcion.estado = 'EN_PROCESO'
+                linea.recepcion.save()
+    return redirect('asn_detalle', pk=linea.recepcion_id)
+
+
+def asn_linea_eliminar(request, linea_id):
+    linea = get_object_or_404(LineaASN, pk=linea_id)
+    asn_pk = linea.recepcion_id
+    if request.method == 'POST':
+        linea.delete()
+    return redirect('asn_detalle', pk=asn_pk)
+
+
+def asn_cerrar(request, pk):
+    asn = get_object_or_404(RecepcionASN, pk=pk)
+    if request.method == 'POST':
+        form = CierreRecepcionForm(request.POST)
+        if form.is_valid():
+            asn.bultos_recibidos = form.cleaned_data['bultos_recibidos']
+            asn.estado           = form.cleaned_data['estado']
+            asn.observaciones    = form.cleaned_data.get('observaciones', asn.observaciones)
+            if form.cleaned_data['estado'] == 'COMPLETADA':
+                asn.cerrada_en = timezone.now()
+                if asn.expedicion:
+                    asn.expedicion.estado = 'ENVIADA'
+                    asn.expedicion.save()
+            asn.save()
+    return redirect('asn_detalle', pk=pk)
+
+
+# ── DOCUMENTOS IMPRIMIBLES ────────────────────────────────────────────────────
+
+def doc_doc1(request, exp_pk):
+    """DOC1 — Nota de carga para expediciones nacionales (TRD/BLK/BDP)."""
+    exp = get_object_or_404(
+        Expedicion.objects.select_related('cliente', 'agencia', 'hub_origen', 'muelle'),
+        pk=exp_pk
+    )
+    visita = exp.visitas.filter(salida__isnull=False).order_by('-salida').first() \
+             or exp.visitas.order_by('-entrada').first()
+    return render(request, 'accesos/docs/doc1.html', {
+        'exp': exp, 'visita': visita, 'now': timezone.now(),
+    })
+
+
+def doc_cmr(request, exp_pk):
+    """CMR — Carta de porte internacional para expediciones EXW."""
+    exp = get_object_or_404(
+        Expedicion.objects.select_related('cliente', 'agencia', 'hub_origen', 'muelle'),
+        pk=exp_pk
+    )
+    visita = exp.visitas.filter(salida__isnull=False).order_by('-salida').first() \
+             or exp.visitas.order_by('-entrada').first()
+    return render(request, 'accesos/docs/cmr.html', {
+        'exp': exp, 'visita': visita, 'now': timezone.now(),
+    })
+
+
+# ── EXPORTACIÓN CSV ───────────────────────────────────────────────────────────
+
+import csv
+from django.http import HttpResponse
+
+
+def export_expediciones_csv(request):
+    fecha_desde = request.GET.get('desde', '')
+    fecha_hasta = request.GET.get('hasta', '')
+    tipo  = request.GET.get('tipo', '')
+    estado = request.GET.get('estado', '')
+
+    qs = Expedicion.objects.select_related('cliente', 'agencia', 'hub_origen', 'muelle').order_by('fecha_cita', 'hora_cita')
+    if fecha_desde:
+        qs = qs.filter(fecha_cita__gte=fecha_desde)
+    if fecha_hasta:
+        qs = qs.filter(fecha_cita__lte=fecha_hasta)
+    if tipo:
+        qs = qs.filter(tipo=tipo)
+    if estado:
+        qs = qs.filter(estado=estado)
+
+    response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
+    response['Content-Disposition'] = 'attachment; filename="expediciones.csv"'
+    w = csv.writer(response, delimiter=';')
+    w.writerow(['Nº Expedición','Tipo','Fecha cita','Hora cita','Estado',
+                'Cliente','Destino','Agencia','Muelle','Palets previstos','SGA','Albarán','Observaciones'])
+    for e in qs:
+        w.writerow([
+            e.numero, e.tipo,
+            e.fecha_cita.strftime('%d/%m/%Y') if e.fecha_cita else '',
+            e.hora_cita.strftime('%H:%M') if e.hora_cita else '',
+            e.get_estado_display(),
+            e.cliente_display, e.destino, e.agencia_display,
+            f'M{e.muelle.numero}' if e.muelle else '',
+            e.palets_previstos or '', e.sga, e.albaran, e.observaciones,
+        ])
+    return response
+
+
+def export_visitas_csv(request):
+    fecha_desde = request.GET.get('desde', '')
+    fecha_hasta = request.GET.get('hasta', '')
+
+    qs = Visit.objects.select_related('expedicion', 'muelle', 'chofer').order_by('-entrada')
+    if fecha_desde:
+        qs = qs.filter(entrada__date__gte=fecha_desde)
+    if fecha_hasta:
+        qs = qs.filter(entrada__date__lte=fecha_hasta)
+
+    response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
+    response['Content-Disposition'] = 'attachment; filename="visitas.csv"'
+    w = csv.writer(response, delimiter=';')
+    w.writerow(['Expedición','Tipo','Muelle','DNI Chofer','Nombre Chofer',
+                'Matrícula tractora','Matrícula remolque','Entrada','Salida',
+                'Tiempo (min)','Palets reales','Doc OK','Precinto','Estado','Incidencias'])
+    for v in qs:
+        mins = int(v.tiempo_total_segundos / 60) if v.salida else ''
+        inc  = v.incidencias.count()
+        w.writerow([
+            v.expedicion.numero if v.expedicion else '',
+            v.tipo, f'M{v.muelle.numero}' if v.muelle else '',
+            v.dni_chofer, v.nombre_chofer,
+            v.matricula_tractora, v.matricula_remolque,
+            v.entrada.strftime('%d/%m/%Y %H:%M'),
+            v.salida.strftime('%d/%m/%Y %H:%M') if v.salida else '',
+            mins,
+            v.palets_reales or '',
+            'Sí' if v.documentacion_ok else ('No' if v.documentacion_ok is False else ''),
+            v.precinto, v.get_estado_display(), inc,
+        ])
+    return response
+
+
+# ── DASHBOARD HISTÓRICO ───────────────────────────────────────────────────────
+
+def historico(request):
+    from django.db.models.functions import TruncDate
+    from django.db.models import Avg, F
+
+    fecha_desde = request.GET.get('desde', '')
+    fecha_hasta = request.GET.get('hasta', '')
+
+    qs_exp = Expedicion.objects.all()
+    qs_vis = Visit.objects.filter(salida__isnull=False)
+
+    if fecha_desde:
+        qs_exp = qs_exp.filter(fecha_cita__gte=fecha_desde)
+        qs_vis = qs_vis.filter(entrada__date__gte=fecha_desde)
+    if fecha_hasta:
+        qs_exp = qs_exp.filter(fecha_cita__lte=fecha_hasta)
+        qs_vis = qs_vis.filter(entrada__date__lte=fecha_hasta)
+
+    # Totales
+    total_exp   = qs_exp.count()
+    total_vis   = qs_vis.count()
+    enviadas    = qs_exp.filter(estado='ENVIADA').count()
+    anuladas    = qs_exp.filter(estado='ANULADA').count()
+
+    # Por tipo
+    por_tipo = {t: qs_exp.filter(tipo=t).count()
+                for t, _ in Expedicion.TIPO_CHOICES}
+
+    # Top 10 clientes por expediciones
+    top_clientes = (qs_exp.values('cliente__nombre', 'cliente_nombre')
+                    .annotate(total=Count('id'))
+                    .order_by('-total')[:10])
+
+    # Top 10 agencias
+    top_agencias = (qs_exp.values('agencia__nick', 'agencia_nombre')
+                    .annotate(total=Count('id'))
+                    .order_by('-total')[:10])
+
+    # Incidencias por causante
+    inc_causante = (Incidencia.objects
+                    .values('causante')
+                    .annotate(total=Count('id'))
+                    .order_by('-total'))
+
+    return render(request, 'accesos/historico.html', {
+        'total_exp': total_exp, 'total_vis': total_vis,
+        'enviadas': enviadas, 'anuladas': anuladas,
+        'por_tipo': por_tipo,
+        'top_clientes': top_clientes,
+        'top_agencias': top_agencias,
+        'inc_causante': inc_causante,
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
+        'tipos': Expedicion.TIPO_CHOICES,
+        'estados': Expedicion.ESTADO_CHOICES,
+    })

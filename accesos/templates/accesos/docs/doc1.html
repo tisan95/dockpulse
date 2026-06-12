@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>DOC1 — {{ exp.numero }}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #000; background: #fff; }
+
+  .page { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 12mm 14mm; }
+
+  /* Header */
+  .doc-header { display: flex; justify-content: space-between; align-items: flex-start;
+    border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 10px; }
+  .doc-logo { font-size: 22px; font-weight: 900; letter-spacing: .12em; color: #000; }
+  .doc-logo span { font-weight: 400; font-size: 12px; display: block; letter-spacing: 0; margin-top: 2px; color: #555; }
+  .doc-title { font-size: 18px; font-weight: 700; text-align: right; }
+  .doc-title small { display: block; font-size: 11px; font-weight: 400; color: #555; margin-top: 2px; }
+
+  /* Info band */
+  .info-band { display: grid; grid-template-columns: repeat(5,1fr); gap: 0;
+    border: 1.5px solid #000; margin-bottom: 10px; }
+  .info-cell { padding: 5px 8px; border-right: 1px solid #ccc; }
+  .info-cell:last-child { border-right: none; }
+  .info-cell .lbl { font-size: 8px; text-transform: uppercase; letter-spacing: .08em; color: #666; }
+  .info-cell .val { font-size: 13px; font-weight: 700; margin-top: 1px; }
+
+  /* Sections */
+  .section { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .box { border: 1.5px solid #000; padding: 8px 10px; }
+  .box-title { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+    color: #fff; background: #000; padding: 2px 6px; margin: -8px -10px 6px; }
+  .row { display: flex; gap: 6px; margin-bottom: 4px; }
+  .row .lbl { font-size: 9px; color: #555; min-width: 90px; }
+  .row .val { font-size: 10px; font-weight: 600; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  thead th { background: #000; color: #fff; padding: 4px 8px; font-size: 9px;
+    text-align: left; text-transform: uppercase; letter-spacing: .08em; }
+  tbody td { padding: 5px 8px; border-bottom: 1px solid #ddd; font-size: 10px; }
+  tbody tr:nth-child(even) td { background: #f5f5f5; }
+
+  /* Signature area */
+  .sign-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 16px; }
+  .sign-box { border: 1.5px solid #000; padding: 8px; height: 60px; }
+  .sign-box .sign-lbl { font-size: 8px; text-transform: uppercase; letter-spacing: .08em; color: #555; }
+
+  /* Barcode-style nº */
+  .numero-band { background: #000; color: #fff; text-align: center; padding: 4px;
+    font-size: 16px; font-weight: 900; letter-spacing: .15em; margin-bottom: 10px; font-family: monospace; }
+
+  /* Footer */
+  .doc-footer { border-top: 1px solid #ccc; margin-top: 10px; padding-top: 6px;
+    font-size: 8px; color: #888; text-align: center; }
+
+  @media print {
+    body { margin: 0; }
+    .page { padding: 8mm 10mm; }
+    .no-print { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Botón imprimir (no se imprime) -->
+<div class="no-print" style="background:#1e293b;padding:10px 20px;display:flex;gap:12px;align-items:center;">
+  <span style="color:#94a3b8;font-size:13px;font-family:sans-serif;">DockPulse — Vista previa del documento</span>
+  <button onclick="window.print()" style="background:#0ea5e9;color:#fff;border:none;border-radius:6px;
+    padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;">Imprimir / Guardar PDF</button>
+  <a href="javascript:history.back()" style="color:#64748b;font-size:13px;text-decoration:none;">← Volver</a>
+</div>
+
+<div class="page">
+  <!-- Header -->
+  <div class="doc-header">
+    <div>
+      <div class="doc-logo">DOCKPULSE<span>Sistema de gestión de almacén</span></div>
+      <div style="font-size:9px;color:#555;margin-top:4px;">
+        {{ exp.hub_origen.entidad|default:"CECOTEC INNOVACIONES, S.L." }}<br>
+        {{ exp.hub_origen.direccion|default:"" }} · {{ exp.hub_origen.poblacion|default:"Massalaves" }}
+      </div>
+    </div>
+    <div>
+      <div class="doc-title">NOTA DE CARGA<small>DOC1 — {{ exp.get_tipo_display }}</small></div>
+      <div style="text-align:right;font-size:9px;color:#555;margin-top:6px;">
+        Emitido: {{ now|date:"d/m/Y H:i" }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Nº expedición destacado -->
+  <div class="numero-band">{{ exp.numero }}</div>
+
+  <!-- Info band -->
+  <div class="info-band">
+    <div class="info-cell">
+      <div class="lbl">Tipo</div>
+      <div class="val">{{ exp.tipo }}</div>
+    </div>
+    <div class="info-cell">
+      <div class="lbl">Fecha cita</div>
+      <div class="val">{{ exp.fecha_cita|date:"d/m/Y"|default:"—" }}</div>
+    </div>
+    <div class="info-cell">
+      <div class="lbl">Hora cita</div>
+      <div class="val">{{ exp.hora_cita|time:"H:i"|default:"—" }}</div>
+    </div>
+    <div class="info-cell">
+      <div class="lbl">Muelle</div>
+      <div class="val">{% if exp.muelle %}M{{ exp.muelle.numero }}{% else %}—{% endif %}</div>
+    </div>
+    <div class="info-cell">
+      <div class="lbl">Palets</div>
+      <div class="val">{{ exp.palets_previstos|default:"—" }}</div>
+    </div>
+  </div>
+
+  <!-- Cliente / Agencia -->
+  <div class="section">
+    <div class="box">
+      <div class="box-title">Destinatario / Cliente</div>
+      <div class="row"><span class="lbl">Nombre:</span><span class="val">{{ exp.cliente_display }}</span></div>
+      {% if exp.cliente %}
+      <div class="row"><span class="lbl">Sucursal:</span><span class="val">{{ exp.cliente.sucursal|default:"" }}</span></div>
+      <div class="row"><span class="lbl">Dirección:</span><span class="val">{{ exp.cliente.direccion|default:"" }}</span></div>
+      <div class="row"><span class="lbl">Población:</span><span class="val">{{ exp.cliente.cp|default:"" }} {{ exp.cliente.poblacion|default:"" }}</span></div>
+      <div class="row"><span class="lbl">País:</span><span class="val">{{ exp.cliente.pais|default:"ESPAÑA" }}</span></div>
+      {% else %}
+      <div class="row"><span class="lbl">Destino:</span><span class="val">{{ exp.destino }}</span></div>
+      {% endif %}
+    </div>
+    <div class="box">
+      <div class="box-title">Agencia / Transportista</div>
+      <div class="row"><span class="lbl">Agencia:</span><span class="val">{{ exp.agencia_display }}</span></div>
+      {% if visita %}
+      <div class="row"><span class="lbl">Chofer:</span><span class="val">{{ visita.nombre_chofer }}</span></div>
+      <div class="row"><span class="lbl">DNI:</span><span class="val">{{ visita.dni_chofer }}</span></div>
+      <div class="row"><span class="lbl">Tractora:</span><span class="val">{{ visita.matricula_tractora }}</span></div>
+      <div class="row"><span class="lbl">Remolque:</span><span class="val">{{ visita.matricula_remolque|default:"—" }}</span></div>
+      <div class="row"><span class="lbl">Precinto:</span><span class="val">{{ visita.precinto|default:"—" }}</span></div>
+      {% else %}
+      <div class="row"><span class="lbl">Vehículo:</span><span class="val">Pendiente de check-in</span></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Referencias SGA -->
+  <div class="box" style="margin-bottom:10px;">
+    <div class="box-title">Referencias del sistema</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding-top:4px;">
+      <div class="row"><span class="lbl">Nº SGA:</span><span class="val">{{ exp.sga|default:"—" }}</span></div>
+      <div class="row"><span class="lbl">Albarán:</span><span class="val">{{ exp.albaran|default:"—" }}</span></div>
+      <div class="row"><span class="lbl">Estado:</span><span class="val">{{ exp.get_estado_display }}</span></div>
+    </div>
+    {% if exp.observaciones %}
+    <div style="margin-top:6px;padding-top:6px;border-top:1px solid #eee;">
+      <span class="lbl" style="font-size:8px;color:#555;">Observaciones: </span>{{ exp.observaciones }}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Control de carga -->
+  <table>
+    <thead>
+      <tr>
+        <th>Descripción de la mercancía</th>
+        <th style="text-align:center;width:80px;">Palets prev.</th>
+        <th style="text-align:center;width:80px;">Palets reales</th>
+        <th style="text-align:center;width:80px;">Diferencia</th>
+        <th style="width:120px;">Observaciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{ exp.cliente_display }} — {{ exp.destino|default:"" }}</td>
+        <td style="text-align:center;font-weight:700;">{{ exp.palets_previstos|default:"—" }}</td>
+        <td style="text-align:center;font-weight:700;">{% if visita %}{{ visita.palets_reales|default:"—" }}{% else %}—{% endif %}</td>
+        <td style="text-align:center;">
+          {% if visita and visita.palets_reales and exp.palets_previstos %}
+            {% with dif=visita.palets_reales|add:"-"|add:exp.palets_previstos %}{{ dif }}{% endwith %}
+          {% else %}—{% endif %}
+        </td>
+        <td>{% if visita %}{{ visita.observaciones|default:"" }}{% endif %}</td>
+      </tr>
+      <tr><td colspan="5" style="height:30px;"></td></tr>
+      <tr><td colspan="5" style="height:30px;"></td></tr>
+    </tbody>
+  </table>
+
+  <!-- Firmas -->
+  <div class="sign-grid">
+    <div class="sign-box">
+      <div class="sign-lbl">Responsable de carga (almacén)</div>
+    </div>
+    <div class="sign-box">
+      <div class="sign-lbl">Chofer / Transportista</div>
+    </div>
+    <div class="sign-box">
+      <div class="sign-lbl">Recibí en destino</div>
+    </div>
+  </div>
+
+  <div class="doc-footer">
+    Documento generado por DockPulse · {{ now|date:"d/m/Y H:i" }} · {{ exp.numero }}
+    — Este documento tiene validez como nota de entrega interna
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>CMR — {{ exp.numero }}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 10px; color: #000; background: #fff; }
+  .page { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 8mm 10mm; }
+
+  /* CMR header band */
+  .cmr-header { display: flex; justify-content: space-between; align-items: center;
+    background: #1a3a6b; color: #fff; padding: 8px 12px; margin-bottom: 0; }
+  .cmr-title { font-size: 20px; font-weight: 900; letter-spacing: .15em; }
+  .cmr-subtitle { font-size: 9px; letter-spacing: .05em; margin-top: 2px; opacity: .8; }
+  .cmr-num { font-size: 14px; font-weight: 700; font-family: monospace; text-align: right; }
+  .cmr-num small { display: block; font-size: 9px; font-weight: 400; opacity: .7; }
+
+  /* CMR grid — numbered cells as per standard */
+  .cmr-grid { border: 2px solid #000; display: grid; }
+  .cmr-row { display: grid; border-bottom: 1px solid #999; }
+  .cmr-row:last-child { border-bottom: none; }
+  .cmr-cell { padding: 4px 6px; border-right: 1px solid #999; position: relative; min-height: 36px; }
+  .cmr-cell:last-child { border-right: none; }
+  .cmr-cell .cn { font-size: 7px; font-weight: 700; color: #1a3a6b; position: absolute;
+    top: 2px; left: 4px; line-height: 1; }
+  .cmr-cell .ct { font-size: 7px; text-transform: uppercase; letter-spacing: .07em;
+    color: #555; margin-top: 10px; margin-bottom: 2px; }
+  .cmr-cell .cv { font-size: 10px; font-weight: 600; margin-top: 2px; min-height: 14px; }
+  .cmr-cell .cv.lg { font-size: 12px; font-weight: 700; }
+
+  /* col spans helpers */
+  .col-1-2 { grid-template-columns: 1fr 1fr; }
+  .col-1-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .col-2-1 { grid-template-columns: 2fr 1fr; }
+  .col-3-1 { grid-template-columns: 3fr 1fr; }
+  .col-1-1-1-1 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  /* Merchandise table */
+  .merch-table { width: 100%; border-collapse: collapse; }
+  .merch-table th { background: #1a3a6b; color: #fff; padding: 3px 6px;
+    font-size: 8px; text-transform: uppercase; letter-spacing: .07em; text-align: left; }
+  .merch-table td { padding: 3px 6px; border-bottom: 1px solid #ddd; font-size: 9px; height: 18px; }
+
+  /* Signature section */
+  .sign-row { display: grid; grid-template-columns: 1fr 1fr 1fr;
+    border-top: 2px solid #000; margin-top: 0; }
+  .sign-cell { padding: 6px 8px; border-right: 1px solid #999; min-height: 55px; }
+  .sign-cell:last-child { border-right: none; }
+  .sign-lbl { font-size: 7px; text-transform: uppercase; letter-spacing: .07em; color: #555; }
+
+  /* Footer */
+  .cmr-footer { background: #1a3a6b; color: #fff; text-align: center;
+    font-size: 7px; padding: 3px; margin-top: 0; letter-spacing: .05em; opacity: .8; }
+
+  @media print {
+    body { margin: 0; }
+    .page { padding: 5mm 6mm; }
+    .no-print { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="no-print" style="background:#1e293b;padding:10px 20px;display:flex;gap:12px;align-items:center;">
+  <span style="color:#94a3b8;font-size:13px;font-family:sans-serif;">DockPulse — Vista previa CMR</span>
+  <button onclick="window.print()" style="background:#6366f1;color:#fff;border:none;border-radius:6px;
+    padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;">Imprimir / Guardar PDF</button>
+  <a href="javascript:history.back()" style="color:#64748b;font-size:13px;text-decoration:none;">← Volver</a>
+</div>
+
+<div class="page">
+  <div class="cmr-header">
+    <div>
+      <div class="cmr-title">CMR</div>
+      <div class="cmr-subtitle">CARTA DE PORTE INTERNACIONAL · INTERNATIONAL CONSIGNMENT NOTE</div>
+      <div style="font-size:8px;margin-top:4px;opacity:.7;">Convenio CMR — Ginebra 1956</div>
+    </div>
+    <div class="cmr-num">
+      {{ exp.numero }}
+      <small>Emitido: {{ now|date:"d/m/Y" }}</small>
+    </div>
+  </div>
+
+  <div class="cmr-grid">
+
+    <!-- Fila 1: Remitente + Destinatario -->
+    <div class="cmr-row col-1-2">
+      <div class="cmr-cell">
+        <span class="cn">1</span>
+        <div class="ct">Remitente / Sender</div>
+        <div class="cv">{{ exp.hub_origen.entidad|default:"CECOTEC INNOVACIONES, S.L." }}</div>
+        <div style="font-size:9px;color:#444;margin-top:2px;">
+          {{ exp.hub_origen.direccion|default:"CAMI REIAL DE MADRID S/N" }}<br>
+          {{ exp.hub_origen.poblacion|default:"MASSALAVES" }} — {{ exp.hub_origen.pais|default:"ESPAÑA" }}
+        </div>
+      </div>
+      <div class="cmr-cell">
+        <span class="cn">2</span>
+        <div class="ct">Destinatario / Consignee</div>
+        <div class="cv">{{ exp.cliente_display }}</div>
+        {% if exp.cliente %}
+        <div style="font-size:9px;color:#444;margin-top:2px;">
+          {{ exp.cliente.direccion|default:"" }}<br>
+          {{ exp.cliente.cp|default:"" }} {{ exp.cliente.poblacion|default:"" }} — {{ exp.cliente.pais|default:"" }}
+        </div>
+        {% else %}
+        <div style="font-size:9px;color:#444;margin-top:2px;">{{ exp.destino }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Fila 2: Lugar entrega + Lugar carga -->
+    <div class="cmr-row col-1-2">
+      <div class="cmr-cell">
+        <span class="cn">3</span>
+        <div class="ct">Lugar de entrega / Place of delivery</div>
+        <div class="cv">
+          {% if exp.cliente %}{{ exp.cliente.poblacion|default:"" }}, {{ exp.cliente.pais|default:"" }}
+          {% else %}{{ exp.destino }}{% endif %}
+        </div>
+      </div>
+      <div class="cmr-cell">
+        <span class="cn">4</span>
+        <div class="ct">Lugar y fecha de carga / Place and date of loading</div>
+        <div class="cv">{{ exp.hub_origen.poblacion|default:"MASSALAVES" }}, {{ exp.fecha_cita|date:"d/m/Y"|default:"—" }}</div>
+      </div>
+    </div>
+
+    <!-- Fila 3: Transportista -->
+    <div class="cmr-row col-1-2">
+      <div class="cmr-cell">
+        <span class="cn">16</span>
+        <div class="ct">Transportista / Carrier</div>
+        <div class="cv lg">{{ exp.agencia_display }}</div>
+        {% if exp.agencia %}
+        <div style="font-size:9px;color:#444;margin-top:2px;">{{ exp.agencia.email|default:"" }}  {{ exp.agencia.telefono|default:"" }}</div>
+        {% endif %}
+      </div>
+      <div class="cmr-cell">
+        <span class="cn">17</span>
+        <div class="ct">Transportista sucesivo / Successive carrier</div>
+        <div class="cv">—</div>
+      </div>
+    </div>
+
+    <!-- Fila 4: Vehículo -->
+    <div class="cmr-row col-1-1-1-1">
+      <div class="cmr-cell">
+        <span class="cn">18</span>
+        <div class="ct">Reservas y observ. del transportista</div>
+        <div class="cv">{% if visita %}{{ visita.observaciones|default:"Ninguna" }}{% else %}—{% endif %}</div>
+      </div>
+      <div class="cmr-cell">
+        <span class="cn">—</span>
+        <div class="ct">Matrícula tractora</div>
+        <div class="cv lg">{% if visita %}{{ visita.matricula_tractora }}{% else %}—{% endif %}</div>
+      </div>
+      <div class="cmr-cell">
+        <span class="cn">—</span>
+        <div class="ct">Matrícula remolque</div>
+        <div class="cv lg">{% if visita %}{{ visita.matricula_remolque|default:"—" }}{% else %}—{% endif %}</div>
+      </div>
+      <div class="cmr-cell">
+        <span class="cn">—</span>
+        <div class="ct">Nombre del conductor</div>
+        <div class="cv">{% if visita %}{{ visita.nombre_chofer }}{% else %}—{% endif %}</div>
+      </div>
+    </div>
+
+    <!-- Fila 5: Mercancías -->
+    <div class="cmr-row" style="grid-template-columns:1fr;">
+      <div class="cmr-cell" style="min-height:80px;">
+        <span class="cn">6–12</span>
+        <div class="ct">Marcas / Número · Nº bultos · Embalaje · Naturaleza de la mercancía · Estadísticas · Peso bruto · Volumen</div>
+        <table class="merch-table" style="margin-top:4px;">
+          <thead>
+            <tr>
+              <th>Marcas / Referencias</th>
+              <th>Nº bultos</th>
+              <th>Naturaleza de la mercancía</th>
+              <th>Peso bruto (kg)</th>
+              <th>Volumen (m³)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ exp.sga|default:exp.albaran|default:"—" }}</td>
+              <td style="text-align:center;font-weight:700;">{{ exp.palets_previstos|default:"—" }} PLT</td>
+              <td>{{ exp.cliente_display }} — {{ exp.destino|default:"" }}</td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr><td colspan="5"></td></tr>
+            <tr><td colspan="5"></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Fila 6: Instrucciones + Fretes -->
+    <div class="cmr-row col-2-1">
+      <div class="cmr-cell">
+        <span class="cn">13</span>
+        <div class="ct">Instrucciones del remitente / Sender's instructions</div>
+        <div class="cv">{{ exp.observaciones|default:"Sin instrucciones especiales." }}</div>
+      </div>
+      <div class="cmr-cell">
+        <span class="cn">15</span>
+        <div class="ct">Condiciones de pago / Payment</div>
+        <div class="cv">EXW — Ex Works</div>
+      </div>
+    </div>
+
+    <!-- Fila 7: Documentos adjuntos -->
+    <div class="cmr-row col-1-2">
+      <div class="cmr-cell">
+        <span class="cn">5</span>
+        <div class="ct">Documentos adjuntos / Attached documents</div>
+        <div class="cv">
+          {% if exp.albaran %}Albarán {{ exp.albaran }}<br>{% endif %}
+          {% if exp.sga %}Pedido SGA {{ exp.sga }}{% endif %}
+        </div>
+      </div>
+      <div class="cmr-cell">
+        <span class="cn">19–22</span>
+        <div class="ct">Flete a pagar — Gastos — Reembolso — Expedidor</div>
+        <div class="cv" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px;font-size:9px;">
+          <div>Flete: ____________</div><div>Reembolso: ____________</div>
+          <div>Gastos: ____________</div><div>Otros: ____________</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /cmr-grid -->
+
+  <!-- Firmas -->
+  <div class="sign-row">
+    <div class="sign-cell">
+      <div class="sign-lbl">23 — Remitente / Sender<br>Lugar y fecha — Firma y sello</div>
+      <div style="margin-top:8px;font-size:9px;">
+        {{ exp.hub_origen.poblacion|default:"MASSALAVES" }}, {{ now|date:"d/m/Y" }}
+      </div>
+    </div>
+    <div class="sign-cell">
+      <div class="sign-lbl">24 — Transportista / Carrier<br>Lugar y fecha — Firma y sello</div>
+    </div>
+    <div class="sign-cell">
+      <div class="sign-lbl">25 — Destinatario / Consignee<br>Lugar y fecha — Firma y sello</div>
+    </div>
+  </div>
+
+  <div class="cmr-footer">
+    DOCKPULSE · CMR generado el {{ now|date:"d/m/Y H:i" }} · {{ exp.numero }} ·
+    Este documento está sujeto al Convenio relativo al Contrato de Transporte Internacional de Mercancías por Carretera (CMR), firmado en Ginebra el 19 de mayo de 1956.
+  </div>
+</div>
+</body>
+</html>

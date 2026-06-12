@@ -1,0 +1,275 @@
+{% extends 'accesos/base.html' %}
+{% block title %}ASN {{ asn.expedicion.numero }}{% endblock %}
+
+{% block head_extra %}
+<style>
+.est-PENDIENTE  { background:rgba(100,116,139,0.12);color:var(--text-dim);border:1px solid rgba(100,116,139,0.2); }
+.est-EN_PROCESO { background:rgba(250,204,21,0.12);color:var(--yellow);border:1px solid rgba(250,204,21,0.2); }
+.est-COMPLETADA { background:rgba(74,222,128,0.12);color:var(--green);border:1px solid rgba(74,222,128,0.2); }
+.est-INCIDENCIA { background:rgba(248,113,113,0.12);color:var(--red);border:1px solid rgba(248,113,113,0.2); }
+
+.linea-ok       { border-left:3px solid rgba(74,222,128,0.5); }
+.linea-falta    { border-left:3px solid rgba(248,113,113,0.6); }
+.linea-exceso   { border-left:3px solid rgba(250,204,21,0.5); }
+.linea-pendiente{ border-left:3px solid rgba(100,116,139,0.3); }
+
+.dif-ok      { color:var(--green);font-weight:700; }
+.dif-falta   { color:var(--red);font-weight:700; }
+.dif-exceso  { color:var(--yellow);font-weight:700; }
+.dif-pending { color:var(--text-muted); }
+
+.conteo-form { display:flex;gap:8px;align-items:center; }
+.conteo-form input[type=number] { width:90px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Cabecera -->
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+    <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <span class="dp-badge badge-rojo">ENT</span>
+            <h1 style="font-size:20px;font-weight:700;font-family:monospace;">{{ asn.expedicion.numero }}</h1>
+            <span class="dp-badge est-{{ asn.estado }}">{{ asn.get_estado_display }}</span>
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);">
+            Contenedor: <strong style="color:var(--text);font-family:monospace;">{{ asn.numero_contenedor|default:"—" }}</strong>
+            &nbsp;·&nbsp; BL: <span style="font-family:monospace;">{{ asn.bill_of_lading|default:"—" }}</span>
+            &nbsp;·&nbsp; Puerto: {{ asn.get_puerto_origen_display }}
+        </p>
+    </div>
+    <div style="display:flex;gap:8px;">
+        <a href="{% url 'asn_editar' asn.pk %}" class="dp-btn dp-btn-ghost dp-btn-sm">Editar</a>
+        <a href="{% url 'asn_lista' %}" class="dp-btn dp-btn-ghost dp-btn-sm">← Lista</a>
+    </div>
+</div>
+
+<!-- Info grid -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:20px;">
+    <div class="info-cell" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Proveedor</div>
+        <div style="font-size:13px;font-weight:600;">{{ asn.proveedor|default:"—" }}</div>
+    </div>
+    <div class="info-cell" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">OC</div>
+        <div style="font-size:13px;font-weight:600;font-family:monospace;">{{ asn.orden_compra|default:"—" }}</div>
+    </div>
+    <div class="info-cell" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Llegada prevista</div>
+        <div style="font-size:13px;font-weight:600;">{{ asn.fecha_llegada_prev|date:"d/m/Y"|default:"—" }}</div>
+    </div>
+    <div class="info-cell" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Bultos declarados</div>
+        <div style="font-size:22px;font-weight:800;color:var(--accent);">{{ asn.bultos_declarados|default:"—" }}</div>
+    </div>
+    <div class="info-cell" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Bultos recibidos</div>
+        <div style="font-size:22px;font-weight:800;
+            {% if asn.bultos_recibidos is not None %}
+                {% if asn.tiene_diferencia %}color:var(--red);{% else %}color:var(--green);{% endif %}
+            {% else %}color:var(--text-muted);{% endif %}">
+            {{ asn.bultos_recibidos|default:"—" }}
+        </div>
+    </div>
+    {% if asn.diferencia_bultos is not None %}
+    <div class="info-cell" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Diferencia</div>
+        <div style="font-size:22px;font-weight:800;
+            {% if asn.diferencia_bultos == 0 %}color:var(--green);
+            {% elif asn.diferencia_bultos > 0 %}color:var(--yellow);
+            {% else %}color:var(--red);{% endif %}">
+            {% if asn.diferencia_bultos > 0 %}+{% endif %}{{ asn.diferencia_bultos }}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;">
+
+    <!-- Panel principal: líneas de producto -->
+    <div>
+        <div class="dp-card" style="padding:0;overflow:hidden;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);">
+                <div>
+                    <span style="font-size:15px;font-weight:600;">Líneas de producto</span>
+                    {% if asn.lineas_con_diferencia > 0 %}
+                    <span class="dp-badge badge-rojo" style="margin-left:8px;">{{ asn.lineas_con_diferencia }} con diferencia</span>
+                    {% endif %}
+                </div>
+                <span class="dp-badge badge-gris">{{ asn.total_lineas }} líneas</span>
+            </div>
+
+            {% if asn.lineas.all %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Referencia</th><th>Descripción</th><th>Lote</th>
+                        <th style="text-align:right;">Decl.</th>
+                        <th style="text-align:right;">Recib.</th>
+                        <th style="text-align:right;">Dif.</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for linea in asn.lineas.all %}
+                    {% with est=linea.estado_linea dif=linea.diferencia %}
+                    <tr class="linea-{{ est }}">
+                        <td style="font-family:monospace;font-weight:600;color:var(--accent);">{{ linea.referencia }}</td>
+                        <td style="color:var(--text-dim);font-size:12px;">{{ linea.descripcion|default:"—" }}</td>
+                        <td style="font-family:monospace;font-size:11px;color:var(--text-muted);">{{ linea.lote|default:"—" }}</td>
+                        <td style="text-align:right;font-weight:600;">{{ linea.unidades_declaradas }}</td>
+                        <td style="text-align:right;">
+                            {% if linea.unidades_recibidas is not None %}
+                            <strong>{{ linea.unidades_recibidas }}</strong>
+                            {% else %}
+                            <span style="color:var(--text-muted);">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:right;">
+                            {% if dif is not None %}
+                            <span class="dif-{% if dif == 0 %}ok{% elif dif > 0 %}exceso{% else %}falta{% endif %}">
+                                {% if dif > 0 %}+{% endif %}{{ dif }}
+                            </span>
+                            {% else %}
+                            <span class="dif-pending">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if est == 'ok' %}
+                            <span class="dp-badge badge-verde">OK</span>
+                            {% elif est == 'falta' %}
+                            <span class="dp-badge badge-rojo">Falta</span>
+                            {% elif est == 'exceso' %}
+                            <span class="dp-badge badge-amarillo">Exceso</span>
+                            {% else %}
+                            <span class="dp-badge badge-gris">Pendiente</span>
+                            {% endif %}
+                            {% if not linea.diferencia_ok and linea.observaciones %}
+                            <span style="font-size:10px;color:var(--text-muted);display:block;">{{ linea.observaciones }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if asn.estado != 'COMPLETADA' %}
+                            <button onclick="toggleConteo({{ linea.pk }})" class="dp-btn dp-btn-ghost dp-btn-xs">
+                                {% if linea.unidades_recibidas is not None %}Re-contar{% else %}Contar{% endif %}
+                            </button>
+                            <form method="post" action="{% url 'asn_linea_eliminar' linea.pk %}" style="display:inline;" onsubmit="return confirm('¿Eliminar esta línea?');">
+                                {% csrf_token %}
+                                <button type="submit" class="dp-btn dp-btn-ghost dp-btn-xs" style="color:var(--red);">✕</button>
+                            </form>
+                            {% endif %}
+                            <!-- Formulario de conteo (oculto) -->
+                            <div id="conteo-{{ linea.pk }}" style="display:none;margin-top:8px;">
+                                <form method="post" action="{% url 'asn_linea_contar' linea.pk %}" class="conteo-form">
+                                    {% csrf_token %}
+                                    <input type="number" name="unidades_recibidas" min="0"
+                                           value="{{ linea.unidades_recibidas|default:linea.unidades_declaradas }}"
+                                           class="dp-input" style="width:90px;">
+                                    <input type="text" name="observaciones" placeholder="Motivo dif."
+                                           value="{{ linea.observaciones }}" class="dp-input" style="width:140px;">
+                                    <label style="display:flex;align-items:center;gap:4px;font-size:12px;white-space:nowrap;">
+                                        <input type="checkbox" name="diferencia_ok" {% if linea.diferencia_ok %}checked{% endif %}> Aceptar dif.
+                                    </label>
+                                    <button type="submit" class="dp-btn dp-btn-primary dp-btn-xs">Guardar</button>
+                                    <button type="button" onclick="toggleConteo({{ linea.pk }})" class="dp-btn dp-btn-ghost dp-btn-xs">✕</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endwith %}
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="padding:32px;text-align:center;color:var(--text-muted);">
+                No hay líneas registradas aún. Añade referencias del contenedor.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Formulario añadir línea -->
+        {% if asn.estado != 'COMPLETADA' %}
+        <div class="dp-card">
+            <div class="dp-card-title">Añadir línea</div>
+            <form method="post" action="{% url 'asn_linea_agregar' asn.pk %}">
+                {% csrf_token %}
+                <div class="dp-grid-3">
+                    <div class="dp-field">
+                        <label class="dp-label">{{ linea_form.referencia.label }}</label>
+                        {{ linea_form.referencia }}
+                    </div>
+                    <div class="dp-field" style="grid-column:span 2;">
+                        <label class="dp-label">{{ linea_form.descripcion.label }}</label>
+                        {{ linea_form.descripcion }}
+                    </div>
+                </div>
+                <div class="dp-grid-3">
+                    <div class="dp-field">
+                        <label class="dp-label">{{ linea_form.unidades_declaradas.label }}</label>
+                        {{ linea_form.unidades_declaradas }}
+                    </div>
+                    <div class="dp-field">
+                        <label class="dp-label">{{ linea_form.lote.label }}</label>
+                        {{ linea_form.lote }}
+                    </div>
+                    <div style="display:flex;align-items:flex-end;padding-bottom:16px;">
+                        <button type="submit" class="dp-btn dp-btn-primary" style="width:100%;">+ Añadir</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Panel lateral: cierre de recepción -->
+    <div>
+        {% if asn.estado != 'COMPLETADA' %}
+        <div class="dp-card">
+            <div class="dp-card-title">Cerrar recepción</div>
+            <div class="dp-card-sub">Registra los bultos reales y el estado final</div>
+            <form method="post" action="{% url 'asn_cerrar' asn.pk %}">
+                {% csrf_token %}
+                <div class="dp-field">
+                    <label class="dp-label">{{ cierre_form.bultos_recibidos.label }}</label>
+                    {{ cierre_form.bultos_recibidos }}
+                </div>
+                <div class="dp-field">
+                    <label class="dp-label">{{ cierre_form.estado.label }}</label>
+                    {{ cierre_form.estado }}
+                </div>
+                <div class="dp-field">
+                    <label class="dp-label">{{ cierre_form.observaciones.label }}</label>
+                    {{ cierre_form.observaciones }}
+                </div>
+                <button type="submit" class="dp-btn dp-btn-primary" style="width:100%;">Cerrar recepción</button>
+            </form>
+        </div>
+        {% else %}
+        <div class="dp-card" style="border-color:rgba(74,222,128,0.3);">
+            <div style="text-align:center;padding:12px 0;">
+                <div style="font-size:32px;margin-bottom:8px;">✓</div>
+                <div style="font-size:15px;font-weight:700;color:var(--green);">Recepción completada</div>
+                {% if asn.cerrada_en %}
+                <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">{{ asn.cerrada_en|date:"d/m/Y H:i" }}</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if asn.observaciones %}
+        <div class="dp-card" style="margin-top:0;">
+            <div class="dp-card-title">Observaciones</div>
+            <p style="font-size:13px;color:var(--text-dim);margin-top:8px;">{{ asn.observaciones }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function toggleConteo(id) {
+    const el = document.getElementById('conteo-' + id);
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+{% endblock %}

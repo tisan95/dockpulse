@@ -198,3 +198,103 @@ class ChoferForm(forms.ModelForm):
             'telefono':          forms.TextInput(attrs={**W, 'placeholder': '600 000 000'}),
             'matricula_habitual':forms.TextInput(attrs={**W, 'placeholder': '1234ABC'}),
         }
+
+
+# ── ASN ───────────────────────────────────────────────────────────────────────
+
+from .models import RecepcionASN, LineaASN
+
+
+class RecepcionASNForm(forms.ModelForm):
+    class Meta:
+        model  = RecepcionASN
+        fields = [
+            'expedicion', 'numero_contenedor', 'bill_of_lading',
+            'orden_compra', 'proveedor', 'puerto_origen', 'hub_destino',
+            'fecha_llegada_prev', 'bultos_declarados', 'peso_declarado_kg',
+            'observaciones',
+        ]
+        labels = {
+            'expedicion':        'Expedición ENT vinculada',
+            'numero_contenedor': 'Nº contenedor',
+            'bill_of_lading':    'Bill of Lading',
+            'orden_compra':      'Orden de compra',
+            'proveedor':         'Proveedor / armador',
+            'puerto_origen':     'Puerto de origen',
+            'hub_destino':       'Hub de destino',
+            'fecha_llegada_prev':'Llegada prevista',
+            'bultos_declarados': 'Bultos declarados',
+            'peso_declarado_kg': 'Peso declarado (kg)',
+            'observaciones':     'Observaciones',
+        }
+        widgets = {
+            'expedicion':        forms.Select(attrs=W),
+            'numero_contenedor': forms.TextInput(attrs={**W, 'placeholder': 'CAIU1234567'}),
+            'bill_of_lading':    forms.TextInput(attrs={**W, 'placeholder': 'HLCUVAL230812345'}),
+            'orden_compra':      forms.TextInput(attrs={**W, 'placeholder': 'OC-2024-00123'}),
+            'proveedor':         forms.TextInput(attrs={**W, 'placeholder': 'PROVEEDOR CHINA SRL'}),
+            'puerto_origen':     forms.Select(attrs=W),
+            'hub_destino':       forms.Select(attrs=W),
+            'fecha_llegada_prev':forms.DateInput(attrs={**W, 'type': 'date'}),
+            'bultos_declarados': forms.NumberInput(attrs={**W, 'placeholder': '0'}),
+            'peso_declarado_kg': forms.NumberInput(attrs={**W, 'placeholder': '0.00', 'step': '0.01'}),
+            'observaciones':     forms.Textarea(attrs={**W, 'rows': 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from .models import Expedicion
+        self.fields['expedicion'].queryset = (
+            Expedicion.objects.filter(tipo='ENT')
+            .order_by('-fecha_cita', 'numero')
+        )
+
+
+class LineaASNForm(forms.ModelForm):
+    class Meta:
+        model  = LineaASN
+        fields = ['referencia', 'descripcion', 'unidades_declaradas', 'lote', 'observaciones']
+        labels = {
+            'referencia':          'Referencia',
+            'descripcion':         'Descripción',
+            'unidades_declaradas': 'Uds. declaradas',
+            'lote':                'Lote',
+            'observaciones':       'Obs.',
+        }
+        widgets = {
+            'referencia':          forms.TextInput(attrs={**W, 'placeholder': 'REF-00123'}),
+            'descripcion':         forms.TextInput(attrs={**W, 'placeholder': 'Descripción del artículo'}),
+            'unidades_declaradas': forms.NumberInput(attrs={**W, 'placeholder': '0', 'min': '0'}),
+            'lote':                forms.TextInput(attrs={**W, 'placeholder': 'LOTE-24001'}),
+            'observaciones':       forms.TextInput(attrs={**W, 'placeholder': ''}),
+        }
+
+
+class ConteoLineaForm(forms.Form):
+    """Para registrar unidades reales en la pantalla de conteo."""
+    unidades_recibidas = forms.IntegerField(
+        min_value=0, label='Uds. recibidas',
+        widget=forms.NumberInput(attrs={**W, 'min': '0'}),
+    )
+    diferencia_ok = forms.BooleanField(required=False, label='Diferencia aceptada')
+    observaciones = forms.CharField(
+        required=False, max_length=200,
+        widget=forms.TextInput(attrs={**W, 'placeholder': 'Motivo si hay diferencia…'}),
+    )
+
+
+class CierreRecepcionForm(forms.Form):
+    """Cierre final: bultos reales + estado."""
+    bultos_recibidos = forms.IntegerField(
+        min_value=0, label='Bultos reales recibidos',
+        widget=forms.NumberInput(attrs={**W}),
+    )
+    estado = forms.ChoiceField(
+        choices=RecepcionASN.ESTADO_CHOICES,
+        label='Estado final',
+        widget=forms.Select(attrs=W),
+    )
+    observaciones = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={**W, 'rows': 2, 'placeholder': 'Observaciones de cierre…'}),
+    )

@@ -110,8 +110,13 @@
                     <span class="badge-estado est-{{ exp.estado }}">{{ exp.get_estado_display }}</span>
                 </td>
                 <td>
-                    <div style="display:flex; gap:6px; align-items:center;">
+                    <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
                         <a href="{% url 'expedicion_editar' exp.pk %}" class="dp-btn dp-btn-ghost dp-btn-xs">Editar</a>
+                        {% if exp.tipo == 'EXW' %}
+                        <a href="{% url 'doc_cmr' exp.pk %}" target="_blank" class="dp-btn dp-btn-ghost dp-btn-xs">CMR</a>
+                        {% else %}
+                        <a href="{% url 'doc_doc1' exp.pk %}" target="_blank" class="dp-btn dp-btn-ghost dp-btn-xs">DOC1</a>
+                        {% endif %}
                         <form method="post" action="{% url 'expedicion_estado' exp.pk %}" style="display:flex;gap:4px;">
                             {% csrf_token %}
                             <select name="estado" class="action-select">

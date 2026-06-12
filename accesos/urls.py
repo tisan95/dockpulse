@@ -40,4 +40,23 @@ urlpatterns = [
     path('maestros/choferes/nuevo/',          views.chofer_crear,        name='chofer_crear'),
     path('maestros/choferes/<int:pk>/editar/',views.chofer_editar,       name='chofer_editar'),
     path('maestros/choferes/<int:pk>/toggle/',views.chofer_toggle,       name='chofer_toggle'),
+
+    # Documentos (imprimibles)
+    path('doc/doc1/<int:exp_pk>/',            views.doc_doc1,            name='doc_doc1'),
+    path('doc/cmr/<int:exp_pk>/',             views.doc_cmr,             name='doc_cmr'),
+
+    # Histórico y exportación (Fase 5)
+    path('historico/',                        views.historico,           name='historico'),
+    path('export/expediciones/',              views.export_expediciones_csv, name='export_expediciones'),
+    path('export/visitas/',                   views.export_visitas_csv,  name='export_visitas'),
+
+    # ASN / Recepción inbound
+    path('asn/',                              views.asn_lista,           name='asn_lista'),
+    path('asn/nuevo/',                        views.asn_crear,           name='asn_crear'),
+    path('asn/<int:pk>/',                     views.asn_detalle,         name='asn_detalle'),
+    path('asn/<int:pk>/editar/',              views.asn_editar,          name='asn_editar'),
+    path('asn/<int:pk>/cerrar/',              views.asn_cerrar,          name='asn_cerrar'),
+    path('asn/<int:pk>/linea/',               views.asn_linea_agregar,   name='asn_linea_agregar'),
+    path('asn/linea/<int:linea_id>/contar/',  views.asn_linea_contar,    name='asn_linea_contar'),
+    path('asn/linea/<int:linea_id>/eliminar/',views.asn_linea_eliminar,  name='asn_linea_eliminar'),
 ]

@@ -317,3 +317,113 @@ class Incidencia(models.Model):
     class Meta:
         ordering = ['-urgente', '-creada_en']
         verbose_name = 'Incidencia'
+
+
+# ── ASN / RECEPCIÓN INBOUND ───────────────────────────────────────────────────
+
+class RecepcionASN(models.Model):
+    """
+    Aviso de envío (ASN) ligado a una expedición de tipo ENT.
+    Registra los datos del contenedor y el estado de la recepción.
+    """
+    ESTADO_CHOICES = [
+        ('PENDIENTE',   'Pendiente de llegada'),
+        ('EN_PROCESO',  'En proceso de descarga'),
+        ('COMPLETADA',  'Recepción completada'),
+        ('INCIDENCIA',  'Con incidencia'),
+    ]
+    PUERTO_CHOICES = [
+        ('VALENCIA',   'Valencia'),
+        ('BARCELONA',  'Barcelona'),
+        ('BILBAO',     'Bilbao'),
+        ('ALGECIRAS',  'Algeciras'),
+        ('VIGO',       'Vigo'),
+        ('OTROS',      'Otros'),
+    ]
+
+    expedicion          = models.OneToOneField(
+                            'Expedicion', on_delete=models.CASCADE,
+                            related_name='asn', limit_choices_to={'tipo': 'ENT'})
+    numero_contenedor   = models.CharField(max_length=30, blank=True)
+    bill_of_lading      = models.CharField(max_length=50, blank=True, verbose_name='Bill of Lading')
+    orden_compra        = models.CharField(max_length=100, blank=True, verbose_name='Orden de compra')
+    proveedor           = models.CharField(max_length=200, blank=True)
+    puerto_origen       = models.CharField(max_length=15, choices=PUERTO_CHOICES, default='VALENCIA')
+    hub_destino         = models.ForeignKey(
+                            'Hub', on_delete=models.PROTECT,
+                            related_name='recepciones', null=True, blank=True)
+    fecha_llegada_prev  = models.DateField(null=True, blank=True, verbose_name='Llegada prevista')
+    bultos_declarados   = models.PositiveIntegerField(null=True, blank=True)
+    bultos_recibidos    = models.PositiveIntegerField(null=True, blank=True)
+    peso_declarado_kg   = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    estado              = models.CharField(max_length=12, choices=ESTADO_CHOICES, default='PENDIENTE')
+    observaciones       = models.TextField(blank=True)
+    creada_en           = models.DateTimeField(auto_now_add=True)
+    cerrada_en          = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def diferencia_bultos(self):
+        if self.bultos_declarados is not None and self.bultos_recibidos is not None:
+            return self.bultos_recibidos - self.bultos_declarados
+        return None
+
+    @property
+    def tiene_diferencia(self):
+        d = self.diferencia_bultos
+        return d is not None and d != 0
+
+    @property
+    def total_lineas(self):
+        return self.lineas.count()
+
+    @property
+    def lineas_con_diferencia(self):
+        return self.lineas.filter(diferencia_ok=False).count()
+
+    def __str__(self):
+        return f"ASN {self.expedicion.numero} — {self.numero_contenedor or 'sin contenedor'}"
+
+    class Meta:
+        ordering = ['-creada_en']
+        verbose_name = 'Recepción ASN'
+        verbose_name_plural = 'Recepciones ASN'
+
+
+class LineaASN(models.Model):
+    """
+    Línea de producto dentro de un ASN.
+    Declarado vs. recibido → control de merma/diferencias.
+    """
+    recepcion           = models.ForeignKey(RecepcionASN, on_delete=models.CASCADE, related_name='lineas')
+    referencia          = models.CharField(max_length=50, verbose_name='Referencia')
+    descripcion         = models.CharField(max_length=200, blank=True)
+    unidades_declaradas = models.PositiveIntegerField()
+    unidades_recibidas  = models.PositiveIntegerField(null=True, blank=True)
+    lote                = models.CharField(max_length=50, blank=True)
+    diferencia_ok       = models.BooleanField(default=True)
+    observaciones       = models.CharField(max_length=200, blank=True)
+
+    @property
+    def diferencia(self):
+        if self.unidades_recibidas is not None:
+            return self.unidades_recibidas - self.unidades_declaradas
+        return None
+
+    @property
+    def estado_linea(self):
+        d = self.diferencia
+        if d is None:
+            return 'pendiente'
+        if d == 0:
+            return 'ok'
+        if d > 0:
+            return 'exceso'
+        return 'falta'
+
+    def __str__(self):
+        return f"{self.referencia} — {self.recepcion}"
+
+    class Meta:
+        ordering = ['referencia']
+        verbose_name = 'Línea ASN'
+        verbose_name_plural = 'Líneas ASN'

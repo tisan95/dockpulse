@@ -1,0 +1,75 @@
+{% extends 'accesos/base.html' %}
+{% block title %}{{ accion }}{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <div>
+        <h1 style="font-size:22px;font-weight:700;">{{ accion }}</h1>
+        {% if asn %}<p style="font-size:13px;color:var(--text-muted);margin-top:3px;">{{ asn }}</p>{% endif %}
+    </div>
+    <a href="{% url 'asn_lista' %}" class="dp-btn dp-btn-ghost">← Volver</a>
+</div>
+
+<form method="post" style="max-width:820px;">
+    {% csrf_token %}
+
+    <div class="dp-card">
+        <div class="dp-card-title">Expedición vinculada</div>
+        <div class="dp-card-sub">Selecciona la expedición ENT que corresponde a este contenedor</div>
+        <div class="dp-field" style="max-width:400px;">
+            <label class="dp-label">{{ form.expedicion.label }}</label>
+            {{ form.expedicion }}
+            {% if form.expedicion.errors %}<p style="color:var(--red);font-size:11px;margin-top:4px;">{{ form.expedicion.errors.0 }}</p>{% endif %}
+        </div>
+    </div>
+
+    <div class="dp-card">
+        <div class="dp-card-title">Datos del contenedor</div>
+        <div class="dp-grid-3">
+            <div class="dp-field">
+                <label class="dp-label">{{ form.numero_contenedor.label }}</label>{{ form.numero_contenedor }}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ form.bill_of_lading.label }}</label>{{ form.bill_of_lading }}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ form.orden_compra.label }}</label>{{ form.orden_compra }}
+            </div>
+        </div>
+        <div class="dp-grid-2">
+            <div class="dp-field">
+                <label class="dp-label">{{ form.proveedor.label }}</label>{{ form.proveedor }}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ form.puerto_origen.label }}</label>{{ form.puerto_origen }}
+            </div>
+        </div>
+    </div>
+
+    <div class="dp-card">
+        <div class="dp-card-title">Logística</div>
+        <div class="dp-grid-3">
+            <div class="dp-field">
+                <label class="dp-label">{{ form.hub_destino.label }}</label>{{ form.hub_destino }}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ form.fecha_llegada_prev.label }}</label>{{ form.fecha_llegada_prev }}
+            </div>
+            <div class="dp-field">
+                <label class="dp-label">{{ form.bultos_declarados.label }}</label>{{ form.bultos_declarados }}
+            </div>
+        </div>
+        <div class="dp-field" style="max-width:200px;">
+            <label class="dp-label">{{ form.peso_declarado_kg.label }}</label>{{ form.peso_declarado_kg }}
+        </div>
+        <div class="dp-field">
+            <label class="dp-label">{{ form.observaciones.label }}</label>{{ form.observaciones }}
+        </div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <a href="{% url 'asn_lista' %}" class="dp-btn dp-btn-ghost">Cancelar</a>
+        <button type="submit" class="dp-btn dp-btn-primary">Guardar ASN</button>
+    </div>
+</form>
+{% endblock %}
